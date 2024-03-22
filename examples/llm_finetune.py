@@ -63,21 +63,31 @@ model_name_or_path = '../models/'
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
+    load_in_8bit=False,
+    llm_int8_threshold=6.0,
+    llm_int8_has_fp16_weight=False,
     bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type='nf4'
 )
+
+
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name_or_path,
-    quantization_config=bnb_config,
+    # quantization_config=bnb_config,
+    load_in_8bit=True,
     trust_remote_code=True
 )
 model.config.use_cache = False
 
 
-tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, encode_special_tokens=True, trust_remote_code=True)
 tokenizer.pad_token = tokenizer.eos_token
 
+# chat
+# response, history = model.chat(tokenizer, "please provide three suggestions about time management", history=[])
+# print(response)
 
 
 lora_alpha = 16
@@ -91,14 +101,15 @@ peft_config = LoraConfig(
         "q_proj",
         "k_proj",
         "v_proj",
-        "o_proj",],
+        # "o_proj"
+        ],
     r=lora_r,
     bias="none",
     task_type="CAUSAL_LM"
 )
 
 output_dir = "./results"
-per_device_train_batch_size = 2
+per_device_train_batch_size = 1
 gradient_accumulation_steps = 4
 optim = "paged_adamw_32bit"
 save_steps = 100
@@ -113,7 +124,8 @@ training_arguments = TrainingArguments(
     output_dir=output_dir,
     per_device_train_batch_size=per_device_train_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
-    optim=optim,
+    num_train_epochs=2,
+    # optim=optim,
     save_steps=save_steps,
     logging_steps=logging_steps,
     learning_rate=learning_rate,
@@ -128,7 +140,7 @@ training_arguments = TrainingArguments(
 
 
 
-max_seq_length = 128  # 512
+max_seq_length = 512
 
 trainer = SFTTrainer(
     model=model,

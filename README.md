@@ -13,10 +13,21 @@
 
 ## 技术路线
 
+- continue pretrain
+    - mixed data, hybrid-tuning
 - fine-tune
+    - 数据: 配比, diversity, Self-Instruct, Self-QA, Self-KG
+    - 减少幻觉: Generate with Citation, Factual Consistency Evaluation
 - RAG
 - Agent
 - TBD
+
+
+## How to use it
+
+```
+conda activate xtuner0.1.9
+```
 
 
 ## 资料
