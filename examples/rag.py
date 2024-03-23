@@ -8,6 +8,8 @@
 6. 可选: query embedding后的向量经过rerank
 """
 
+from typing import Optional, Any
+from tqdm import tqdm
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -15,8 +17,10 @@ from langchain.document_loaders import UnstructuredFileLoader, UnstructuredMarkd
 from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter 
 from langchain.vectorstores import Chroma
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain.prompts import PromptTemplate
 from langchain.llms.base import LLM
 from langchain.chains import RetrievalQA
+import gradio as gr
 
 
 def get_texts(file_list):
@@ -46,7 +50,7 @@ def prepare_retrieval_data(docs):
 
 
 def get_retrieval_model():
-    embeddings = HuggingFaceEmbeddings(model_name="/root/data/model/sentence-transformer")
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     return embeddings
 
 
@@ -59,6 +63,13 @@ def build_index(chunks, embeddings, persist_directory = 'data_base/vector_db/chr
     )
     # 将加载的向量数据库持久化到磁盘上
     vectordb.persist()
+
+
+def prepare_vector_index():
+    docs = get_texts(['./2006.15720.pdf'])
+    chunks = prepare_retrieval_data(docs)
+    embeddings = get_retrieval_model()
+    build_index(chunks, embeddings, persist_directory = 'data_base/vector_db/chroma')
 
 
 def get_passage_from_query():
@@ -76,8 +87,8 @@ class InternLLM(LLM):
         self.model = self.model.eval()
         print("完成本地模型的加载")
     
-    def _call(self, prompt : str, stop: Optional[List[str]] = None,
-                run_manager: Optional[CallbackManagerForLLMRun] = None,
+    def _call(self, prompt : str, stop = None,
+                run_manager = None,
                 **kwargs: Any):
      
         system_prompt = """You are an AI assistant whose name is InternLM (书生·浦语).
@@ -87,6 +98,10 @@ class InternLLM(LLM):
         messages = [(system_prompt, '')]
         response, history = self.model.chat(self.tokenizer, prompt , history=messages)
         return response
+    
+    @property
+    def _llm_type(self) -> str:
+        return "InternLM"
 
 
 def get_prompt():
@@ -112,7 +127,7 @@ def load_chain():
         embedding_function=embeddings
     )
 
-    llm = InternLLM()
+    llm = InternLLM(model_name_or_path='../models')
     QA_CHAIN_PROMPT = get_prompt()
 
     qa_chain = RetrievalQA.from_chain_type(llm,
@@ -151,7 +166,7 @@ def main():
     with block as demo:
         with gr.Row(equal_height=True):   
             with gr.Column(scale=15):
-                gr.Markdown("""<h1><center>InternLM</center></h1>
+                gr.Markdown("""<h1><center>LayerLLM powered by InternLM</center></h1>
                     <center>书生浦语</center>
                     """)
             # gr.Image(value=LOGO_PATH, scale=1, min_width=10,show_label=False, show_download_button=False)
@@ -187,4 +202,7 @@ def main():
 
 
 if __name__ == '__main__':
+
+    # prepare_vector_index()
+
     main()

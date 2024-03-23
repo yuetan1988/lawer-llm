@@ -1,4 +1,6 @@
-/models/*
+models/*
 **/results/*
-/reference
+examples/data_base/*
+examples/results/*
+reference/*
 **/.pdf
