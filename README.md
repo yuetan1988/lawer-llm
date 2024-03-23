@@ -24,10 +24,26 @@
 
 
 ## How to use it
+同步模型权重
+```
+```
 
+激活环境
 ```
 conda activate xtuner0.1.9
 ```
+
+web-demo
+```
+# 端口查看开发机ssh连接的端口
+streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
+```
+
+sft
+```
+python llm_finetune.py
+```
+
 
 
 ## 资料
