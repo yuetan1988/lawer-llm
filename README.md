@@ -8,8 +8,8 @@
 
 **Objective**: 
 - 短期目标: 根据已有资料，回答法律相关问题
-    - 已有法律条文的基础上，输入相关问题可以进行法律咨询
-    - 输入相关文件，可以根据法律条文给出评价
+    - 已有法律条文的基础上，输入相关问题可以进行法律咨询.
+    - 输入相关文件，可以根据法律条文给出评价. 即自己输入法律条文
 - 长期目标: 能够根据上传资料，结合法律条文，给出缺失项与违法项
 
 
@@ -17,10 +17,13 @@
 
 - continue pretrain
     - mixed data, hybrid-tuning
+    - sentence-piece 词表扩充
 - fine-tune
     - 数据: 配比, diversity, Self-Instruct, Self-QA, Self-KG
     - 减少幻觉: Generate with Citation, Factual Consistency Evaluation
 - RAG
+    - multi-vector
+    - rerank
 - Agent
 - TBD
 

@@ -1,5 +1,5 @@
 """
-相比rag, 提供更多交互内容, 上传等
+相比rag, 提供更多交互内容, 上传、引用等
 """
 
 from typing import Optional, Any
@@ -155,18 +155,19 @@ class Model_center():
         """
         调用不带历史记录的问答链进行回答
         """
+        search = []
         if question == None or len(question) < 1:
-            return "", chat_history
+            return "", chat_history, search
         try:
             chat_history.append(
                 (question, self.chain({"query": question})["result"]))
-            return "", chat_history
+            return "", chat_history, search
         except Exception as e:
-            return e, chat_history
+            return e, chat_history, search
 
 
 def clear_session():
-    return '', None
+    return '', None, ''
 
 
 def main():
@@ -183,8 +184,14 @@ def main():
 
         with gr.Row():
             with gr.Column(scale=1):
-                embedding_model = gr.Dropdown(['text2vec-base'], label='向量模型', value = 'text2vec-base')
-                chat = gr.Dropdown(['InternLM'], label='大语言模型', value='')     
+                embedding_model = gr.Dropdown(['text2vec-base', 'B3E'], label='向量模型', value = 'text2vec-base')
+                chat = gr.Dropdown(['InternLM'], label='大语言模型', value='InternLM')    
+                top_k = gr.Slider(1,
+                              20,
+                              value=4,
+                              step=1,
+                              label="检索topk文档",
+                              interactive=True) 
                 set_kg_btn = gr.Button("加载知识库")  
                 file = gr.File(label="上传文件到知识库",
                            visible=True,
@@ -193,28 +200,34 @@ def main():
                     
             with gr.Column(scale=4):
                 with gr.Row():
-                    chatbot = gr.Chatbot(height=450, show_copy_button=True)
+                    chatbot = gr.Chatbot(height=400, show_copy_button=True)               
                 with gr.Row():
                     # 创建一个文本框组件，用于输入 prompt。
-                    message = gr.Textbox(label="请输入问题")                  
+                    message = gr.Textbox(label="请输入问题")               
                 with gr.Row():
                     # 创建一个清除按钮，用于清除聊天机器人组件的内容。
-                    clear = gr.ClearButton(
-                        components=[chatbot], value="Clear console")
+                    clear = gr.ClearButton(components=[chatbot], value="清除历史")
                      # 创建提交按钮。
-                    db_wo_his_btn = gr.Button("Chat")
+                    db_wo_his_btn = gr.Button("生成对话")
+                with gr.Row():
+                    # 召回参考文献
+                    search = gr.Textbox(label='引用文献', max_lines=10)
+                    
 
             # 设置按钮的点击事件。当点击时，调用上面定义的 qa_chain_self_answer 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
             file.upload(upload_file,
                     inputs=file,
                     outputs=None)
 
+            # 点击chat按钮
             db_wo_his_btn.click(model_center.qa_chain_self_answer, inputs=[
-                                message, chatbot], outputs=[message, chatbot])
+                                message, chatbot], outputs=[message, chatbot, search])
+            # 输入框回车
+            message.submit(model_center.qa_chain_self_answer, inputs=[
+                                message, chatbot], outputs=[message, chatbot, search])
             
         gr.Markdown("""提醒：<br>
-        1. 初始化数据库时间可能较长，请耐心等待。
-        2. 使用中如果出现异常，将会在文本输入框进行展示，请不要惊慌。 <br>
+        1. 本页面仅仅是个demo，不对结果输出负任何法律责任。 <br>
         """)
     # threads to consume the request
     gr.close_all()
