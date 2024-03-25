@@ -124,7 +124,7 @@ training_arguments = TrainingArguments(
     output_dir=output_dir,
     per_device_train_batch_size=per_device_train_batch_size,
     gradient_accumulation_steps=gradient_accumulation_steps,
-    num_train_epochs=2,
+    num_train_epochs=1,
     # optim=optim,
     save_steps=save_steps,
     logging_steps=logging_steps,
@@ -136,7 +136,6 @@ training_arguments = TrainingArguments(
     group_by_length=True,
     lr_scheduler_type=lr_scheduler_type,
 )
-
 
 
 

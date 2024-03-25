@@ -76,6 +76,18 @@ def get_passage_from_query():
     pass
 
 
+def upload_file(file):
+    """用户上传"""
+    if not os.path.exists("docs"):
+        os.mkdir("docs")
+    filename = os.path.basename(file.name)
+    shutil.move(file.name, "docs/" + filename)
+    # file_list首位插入新上传的文件
+    file_list.insert(0, filename)
+    application.source_service.add_document("docs/" + filename)
+    return gr.Dropdown.update(choices=file_list, value=filename)
+
+
 class InternLLM(LLM):
     tokenizer : AutoTokenizer = None
     model: AutoModelForCausalLM = None
@@ -157,6 +169,10 @@ class Model_center():
             return "", chat_history
         except Exception as e:
             return e, chat_history
+
+
+def clear_session():
+    return '', None
 
 
 def main():
