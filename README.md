@@ -50,7 +50,6 @@ python llm_finetune.py
 ```
 
 
-
 ## 资料
 
 - https://github.com/PKU-YuanGroup/ChatLaw

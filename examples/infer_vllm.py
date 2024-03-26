@@ -1,3 +1,6 @@
+"""
+vllm部署, 主要优化在于: batch, paged attention
+"""
 
 from vllm import LLM
 from vllm import SamplingParams
