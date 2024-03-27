@@ -37,6 +37,8 @@ from transformers import (
     DataCollatorForSeq2Seq,
     HfArgumentParser,
     Seq2SeqTrainingArguments,
+    pipeline,
+    logging,
 )
 from transformers import Trainer, GPTQConfig, deepspeed, set_seed
 from deepspeed import zero
@@ -155,6 +157,12 @@ class SupervisedDataset(Dataset):
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
         return self.preprocessing(self.data[idx])
 
+def print_dataset_example(example, tokenizer):
+    print("input_ids", example["input_ids"])
+    print("inputs", tokenizer.decode(example["input_ids"]))
+    print("label_ids", example["labels"])
+    print("labels", tokenizer.decode(example["labels"]))
+
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -162,6 +170,34 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     print(training_args)
+
+    # Setup logging
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+
+    if training_args.should_log:
+        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
+        transformers.utils.logging.set_verbosity_info()
+
+    log_level = training_args.get_process_log_level()
+    logger.setLevel(log_level)
+    # datasets.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
+    # Log on each process the small summary:
+    logger.warning(
+        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+        + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+    )
+    logger.info(f"Training/evaluation parameters {training_args}")
+
+    # Set seed before initializing model.
+    set_seed(training_args.seed)
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -216,8 +252,26 @@ def train():
         # model.print_trainable_parameters()
 
     # dataset = SupervisedDataset(data_args.data_path, tokenizer, training_args.model_max_length)
-    train_dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
-    print(train_dataset['train'])
+    dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
+    print(dataset['train'])
+
+    # if training_args.do_train:
+    #     if "train" not in datasets:
+    #         raise ValueError("--do_train requires a train dataset")
+    #     train_dataset = datasets["train"]
+    #     if data_args.max_train_samples is not None:
+    #         max_train_samples = min(len(train_dataset), data_args.max_train_samples)
+    #         train_dataset = train_dataset.select(range(max_train_samples))
+    #     with training_args.main_process_first(desc="train dataset map pre-processing"):
+    #         train_dataset = train_dataset.map(
+    #             preprocess_function_train,
+    #             batched=True,
+    #             num_proc=data_args.preprocessing_num_workers,
+    #             remove_columns=column_names,
+    #             load_from_cache_file=not data_args.overwrite_cache,
+    #             desc="Running tokenizer on train dataset",
+    #         )
+    #     print_dataset_example(train_dataset[0], tokenizer)
 
     # trainer = transformers.Trainer(
     #     model=model, args=training_args, train_dataset=train_dataset["train"], tokenizer=tokenizer
@@ -237,7 +291,29 @@ def train():
     )
     trainer.train()
 
-    trainer.save_model(training_args.output_dir)
+    # trainer.save_model(training_args.output_dir)
+    trainer.model.save_pretrained("internlm-2-7b-layer")
+
+
+def inference():
+    base_model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        low_cpu_mem_usage=True,
+        return_dict=True,
+        torch_dtype=torch.float16,
+        device_map=device_map,
+    )
+    model = PeftModel.from_pretrained(base_model, new_model)
+    model = model.merge_and_unload()
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
+
+    prompt = "What is a large language model?"
+    pipe = pipeline(task="text-generation", model=model, tokenizer=tokenizer, max_length=200)
+    result = pipe(f"<s>[INST] {prompt} [/INST]")
+    print(result[0]['generated_text'])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# LLM律师小助手
+# LLM律师小助手-最有应得大模型
 
 书生·浦语 (InternLM) 开源大模型实践项目。
 
@@ -31,6 +31,7 @@
 ## How to use it
 同步模型权重
 ```
+cp -r /root/share/temp/model_repos/internlm-chat-7b /root/lawer-llm/models
 ```
 
 激活环境
