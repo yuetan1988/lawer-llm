@@ -29,23 +29,30 @@
 
 
 ## How to use it
-同步模型权重
+### 同步模型权重
 ```
 cp -r /root/share/temp/model_repos/internlm-chat-7b /root/lawer-llm/models
 ```
 
-激活环境
+### 激活环境
 ```
 conda activate xtuner0.1.9
 ```
 
-web-demo
+### web-demo
 ```
 # 端口查看开发机ssh连接的端口
 streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
 ```
 
-sft
+### sft
+
+数据
+```
+git clone https://huggingface.co/datasets/ShengbinYue/DISC-Law-SFT
+git clone https://github.com/liuhuanyong/CrimeKgAssitant
+```
+
 ```
 python llm_finetune.py
 ```

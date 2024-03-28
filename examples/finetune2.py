@@ -38,7 +38,6 @@ from transformers import (
     HfArgumentParser,
     Seq2SeqTrainingArguments,
     pipeline,
-    logging,
 )
 from transformers import Trainer, GPTQConfig, deepspeed, set_seed
 from deepspeed import zero
@@ -199,6 +198,23 @@ def train():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_args.model_name_or_path,
+        # use_fast=False,
+        encode_special_tokens=True,
+        trust_remote_code=True,
+        # model_max_length=training_args.model_max_length,
+        # cache_dir=training_args.cache_dir,
+    )
+    tokenizer.pad_token = tokenizer.eos_token
+
+    # dataset = SupervisedDataset(data_args.data_path, tokenizer, training_args.model_max_length)
+    # dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
+    dataset = load_dataset("ShengbinYue/DISC-Law-SFT")
+    print(dataset)
+    print(dataset['train'])
+    assert 0==1
+
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         load_in_8bit=False,
@@ -220,16 +236,8 @@ def train():
     # response, history = model.chat(tokenizer, "please provide three suggestions about time management", history=[])
     # print(response)
 
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        # use_fast=False,
-        encode_special_tokens=True,
-        trust_remote_code=True,
-        # model_max_length=training_args.model_max_length,
-        # cache_dir=training_args.cache_dir,
-    )
-    tokenizer.pad_token = tokenizer.eos_token
+    
+    
     
     if training_args.use_lora:  
         from peft import LoraConfig, TaskType, get_peft_model
@@ -250,10 +258,7 @@ def train():
         # model.enable_input_require_grads()
         # model = get_peft_model(model, peft_config)
         # model.print_trainable_parameters()
-
-    # dataset = SupervisedDataset(data_args.data_path, tokenizer, training_args.model_max_length)
-    dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
-    print(dataset['train'])
+   
 
     # if training_args.do_train:
     #     if "train" not in datasets:
