@@ -10,8 +10,10 @@ import pandas as pd
 from typing import Optional, Dict, List
 from dataclasses import dataclass, field
 import torch
-from torch.utils.data import Dataset
+# from torch.utils.data import Dataset
 from datasets import load_dataset
+from datasets import Features
+from datasets.arrow_dataset import Dataset
 import bitsandbytes as bnb
 from peft import (
     LoraConfig,
@@ -48,6 +50,7 @@ from trl import SFTTrainer
 
 # from rouge_chinese import Rouge
 # from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from modelscope.msdatasets import MsDataset
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +89,10 @@ class TrainingArguments(transformers.TrainingArguments):
     max_steps:int = field(default=100)
     warmup_ratio:float = field(default=0.03)
     lr_scheduler_type:str = field(default="constant")
+    remove_unused_columns:bool = field(default=False)
+    group_by_length:bool = field(default=True, metadata={
+            "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
+        },)
 
 
 class SupervisedDataset(Dataset):
@@ -156,11 +163,46 @@ class SupervisedDataset(Dataset):
     def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
         return self.preprocessing(self.data[idx])
 
-def print_dataset_example(example, tokenizer):
-    print("input_ids", example["input_ids"])
-    print("inputs", tokenizer.decode(example["input_ids"]))
-    print("label_ids", example["labels"])
-    print("labels", tokenizer.decode(example["labels"]))
+
+def gen_batches_train():
+    # https://plainenglish.io/community/fine-tuning-mistral-7b-model-with-your-custom-data-010eb6
+    ds = MsDataset.load('AI-ModelScope/DISC-Law-SFT', subset_name='default', split='train', cache_dir='../inputs')
+    total_samples = 10000
+    val_pct = 0.1
+    train_limit = int(total_samples * (1 - val_pct))
+    counter = 0
+    trainbatch = []
+
+    for sample in iter(ds):
+        if counter >= train_limit:
+            break
+
+        prompt = sample['input']
+        response = sample['output']
+        new_text_format = f'### Human: {prompt} ### Assistant: {response}'
+    
+        trainbatch.append({'text': new_text_format})
+        counter += 1
+
+    return trainbatch
+
+
+def back():
+    def read_jsonl(path):
+        data = []
+        with open(path, 'r') as f:
+            for line in f:
+                data.append(json.loads(line))
+        return data
+
+    train_data_list = read_jsonl('./output_examples_train.jsonl')
+    valid_data_list = read_jsonl('./output_examples_val.jsonl')
+
+    tr_data_dict = {'text': [item['text'] for item in train_data_list]}
+    val_data_dict = {'text': [item['text'] for item in valid_data_list]}
+
+    train_dataset = Dataset.from_dict(tr_data_dict)
+    valid_dataset = Dataset.from_dict(val_data_dict)
 
 
 def train():
@@ -207,13 +249,38 @@ def train():
         # cache_dir=training_args.cache_dir,
     )
     tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
 
     # dataset = SupervisedDataset(data_args.data_path, tokenizer, training_args.model_max_length)
     # dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
-    dataset = load_dataset("ShengbinYue/DISC-Law-SFT")
-    print(dataset)
-    print(dataset['train'])
-    assert 0==1
+    # dataset = MsDataset.load('AI-ModelScope/DISC-Law-SFT', subset_name='default', split='train', cache_dir='../inputs')
+    # ds =  MsDataset.load('Daxusell/china_law_set')
+
+
+    # column_names = list(next(iter(dataset)).keys())
+    # print('*'*20, column_names)
+
+    # features = Features.from_dict(
+    #     {
+    #         "prompt": [
+    #             {"role": {"dtype": "string", "_type": "Value"}, "content": {"dtype": "string", "_type": "Value"}}
+    #         ],
+    #         "response": [
+    #             {"role": {"dtype": "string", "_type": "Value"}, "content": {"dtype": "string", "_type": "Value"}}
+    #         ],
+    #         "system": {"dtype": "string", "_type": "Value"},
+    #         "tools": {"dtype": "string", "_type": "Value"},
+    #     }
+    # )
+    # train_dataset = dataset.to_hf_dataset()  # 魔搭社区下载
+
+    # def modelscope_to_df(examples):
+    #     outputs = {"prompt": [], "response": [], "system": [], "tools": []}
+    #     for i, message in enumerate(examples[]):
+
+    train_dataset = Dataset.from_list(gen_batches_train())
+    print(train_dataset[0])
+ 
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -234,9 +301,7 @@ def train():
     )
     model.config.use_cache = False
     # response, history = model.chat(tokenizer, "please provide three suggestions about time management", history=[])
-    # print(response)
-
-    
+    # print(response)    
     
     
     if training_args.use_lora:  
@@ -259,25 +324,6 @@ def train():
         # model = get_peft_model(model, peft_config)
         # model.print_trainable_parameters()
    
-
-    # if training_args.do_train:
-    #     if "train" not in datasets:
-    #         raise ValueError("--do_train requires a train dataset")
-    #     train_dataset = datasets["train"]
-    #     if data_args.max_train_samples is not None:
-    #         max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-    #         train_dataset = train_dataset.select(range(max_train_samples))
-    #     with training_args.main_process_first(desc="train dataset map pre-processing"):
-    #         train_dataset = train_dataset.map(
-    #             preprocess_function_train,
-    #             batched=True,
-    #             num_proc=data_args.preprocessing_num_workers,
-    #             remove_columns=column_names,
-    #             load_from_cache_file=not data_args.overwrite_cache,
-    #             desc="Running tokenizer on train dataset",
-    #         )
-    #     print_dataset_example(train_dataset[0], tokenizer)
-
     # trainer = transformers.Trainer(
     #     model=model, args=training_args, train_dataset=train_dataset["train"], tokenizer=tokenizer
     # )
@@ -287,7 +333,7 @@ def train():
 
     trainer = SFTTrainer(
         model=model,
-        train_dataset=train_dataset["train"],
+        train_dataset=train_dataset,
         peft_config=peft_config,
         dataset_text_field="text",
         max_seq_length=training_args.model_max_length,
@@ -298,6 +344,13 @@ def train():
 
     # trainer.save_model(training_args.output_dir)
     trainer.model.save_pretrained("internlm-2-7b-layer")
+
+    if False:
+        model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="auto", torch_dtype=torch.bfloat16)
+        model = model.merge_and_unload()
+
+        output_merged_dir = os.path.join(script_args.output_dir, "final_merged_checkpoint")
+        model.save_pretrained(output_merged_dir, safe_serialization=True)
 
 
 def inference():
