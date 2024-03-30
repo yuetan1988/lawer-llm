@@ -1,10 +1,12 @@
 import copy
+import logging
 from typing import Optional, Dict, List
 from dataclasses import dataclass, field
 from datasets import load_dataset
 from functools import partial
 import transformers
 from transformers import AutoTokenizer
+from transformers import DataCollatorForSeq2Seq, Trainer
 
 
 IGNORE_INDEX = -100
@@ -66,27 +68,19 @@ def preprocess(
 
 
 def generate_sources_targets(examples, tokenizer: transformers.PreTrainedTokenizer):
-    print(len(examples))
-    
-  
+    # 注意examples的结构, 包含多个keys, 也就是df的列信息. 而其中的instruction/response等长度则是行信息    
+
     if 'instruction' in examples:
         ins_data = examples['instruction']
         input_data = examples['input']
     else:
         ins_data = examples['input']
-        input_data = [''] * len(examples)
+        input_data = [''] * len(ins_data)
     output = examples['output']
 
     len_ = len(ins_data)
-    print(len_, len(examples), len(input_data), len(output))
-
-    print(examples[0][:10])
-    print(examples[1][:10])
-    print(examples[2][:10])
-    print(examples[3][:10])
-    print(examples[4][:10])
-    assert 0==1
-
+    # print(len_, len(examples), len(input_data), len(output), 'instruction' in examples)
+    # assert 0==1
 
     sources = [prompt_input.format_map({'instruction': ins_data[i], 'input': input_data[i]}) if input_data[i] != "" 
     else prompt_no_input.format_map({'instruction': ins_data[i]})
@@ -109,7 +103,11 @@ datasets = load_dataset(
 )
 
 train_dataset = datasets['train']
-print(train_dataset)
+# print(train_dataset)
+# print(train_dataset[0])
+# print('-' * 50)
+# print(train_dataset[1])
+
 
 
 @dataclass
@@ -152,7 +150,7 @@ class TrainingArguments(transformers.TrainingArguments):
     group_by_length:bool = field(default=True, metadata={
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
         },)
-
+    use_deepspeed: bool = field(default=False)
 
 
 parser = transformers.HfArgumentParser(
@@ -162,13 +160,13 @@ model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
 
 tokenizer = AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        # use_fast=False,
-        encode_special_tokens=True,
-        trust_remote_code=True,
-        # model_max_length=training_args.model_max_length,
-        cache_dir=training_args.cache_dir,
-    )
+    model_args.model_name_or_path,
+    # use_fast=False,
+    encode_special_tokens=True,
+    trust_remote_code=True,
+    # model_max_length=training_args.model_max_length,
+    cache_dir=training_args.cache_dir,
+)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "right"
 
@@ -176,7 +174,101 @@ tokenizer.padding_side = "right"
 train_dataset = train_dataset.map(
     function=partial(generate_sources_targets, tokenizer=tokenizer),
     batched=True,
-    # remove_columns=["text"],
+    remove_columns=datasets["train"].column_names,
     desc="Running tokenizer on train dataset",
     num_proc=20
 ).shuffle()
+
+# train_dataset = train_dataset.remove_columns(datasets["train"].column_names)
+
+print(train_dataset[0])
+
+
+
+def build_model(model_args: ModelArguments, training_args: TrainingArguments, data_args: DataArguments) -> tuple:
+
+    if training_args.use_deepspeed:
+
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            torch_dtype='auto',
+            # if model_args.model_name_or_path.find("falcon") != -1 else False
+            trust_remote_code=True
+
+        )
+    else:
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            device_map='auto',
+            # torch_dtype='auto',
+            load_in_8bit=True,
+            # if model_args.model_name_or_path.find("falcon") != -1 else False
+            trust_remote_code=True
+
+        )
+
+    if training_args.use_lora:
+
+        logging.warning("Loading model to Lora")
+
+        from peft import LoraConfig, get_peft_model
+        LORA_R = 32
+        # LORA_ALPHA = 16
+        LORA_DROPOUT = 0.05
+        TARGET_MODULES = [
+            "o_proj","gate_proj", "down_proj", "up_proj"
+        ]
+
+        config = LoraConfig(
+            r=LORA_R,
+            # lora_alpha=LORA_ALPHA,
+            target_modules=TARGET_MODULES,
+            lora_dropout=LORA_DROPOUT,
+            bias="none",
+            task_type="CAUSAL_LM",
+        )
+        # model = model.to(torch.bfloat16)
+        model = get_peft_model(model, config)
+        # peft_module_casting_to_bf16(model)
+        model.print_trainable_parameters()
+
+    # model.is_parallelizable = True
+    # model.model_parallel = True
+    # torch.cuda.empty_cache()   
+    return model
+
+
+def train():
+    parser = transformers.HfArgumentParser(
+        (ModelArguments, DataArguments, TrainingArguments))
+    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+
+    model = build_model(model_args, training_args, data_args)
+
+    # with training_args.main_process_first(desc="loading and tokenization"):
+
+    #     train_dataset = make_train_dataset(
+    #         tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
+
+    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model,
+                                           label_pad_token_id=IGNORE_INDEX
+                                           )
+
+    trainer = Trainer(model=model,
+                      tokenizer=tokenizer,
+                      args=training_args,
+                      train_dataset=train_dataset,
+                      eval_dataset=None,
+                      data_collator=data_collator)
+    trainer.train()
+    trainer.save_state()
+    trainer.save_model(output_dir=training_args.output_dir)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    train()
