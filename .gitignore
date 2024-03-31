@@ -5,3 +5,4 @@ examples/results/*
 reference/*
 **/.pdf
 inputs/
+examples/database/*

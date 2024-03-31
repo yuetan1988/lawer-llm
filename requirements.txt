@@ -1,4 +1,9 @@
 
 langchain
+langchain-community
+tiktoken
 vllm
 modelscope
+sentence-transformers
+chromadb
+gradio
