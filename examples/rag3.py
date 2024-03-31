@@ -2,7 +2,8 @@
 相比rag2, 提供更多后端pipe
 """
 
-from typing import Optional, Any
+from typing import Optional, Any, List
+from collections import defaultdict
 from tqdm import tqdm
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -16,6 +17,16 @@ from langchain.llms.base import LLM
 from langchain.chains import RetrievalQA
 import gradio as gr
 
+from langchain.schema import BaseRetriever
+from langchain.pydantic_v1 import Field, BaseModel
+from langchain.chains import LLMChain
+from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain.output_parsers import PydanticOutputParser
+from langchain.docstore.document import Document
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.schema import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
 
 class InternLLM(LLM):
     tokenizer : AutoTokenizer = None
@@ -24,7 +35,7 @@ class InternLLM(LLM):
     def __init__(self, model_name_or_path):     
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name_or_path, load_in_8bit=True, trust_remote_code=True).cuda()
+        self.model = AutoModelForCausalLM.from_pretrained(model_name_or_path, load_in_8bit=True, trust_remote_code=True, device_map="auto")
         self.model = self.model.eval()
         print("完成本地模型的加载")
     
@@ -43,6 +54,58 @@ class InternLLM(LLM):
     @property
     def _llm_type(self) -> str:
         return "InternLM"
+
+
+
+multi_query_prompt_template = """您是 AI 语言模型助手。您的任务是生成给定用户问题的3个不同版本，以从矢量数据库中检索相关文档。
+                                通过对用户问题生成多个视角，您的目标是帮助用户克服基于距离的相似性搜索的一些限制。
+                                提供这些用换行符分隔的替代问题，不要给出多余的回答。问题：{question}""" # noqa
+MULTI_QUERY_PROMPT_TEMPLATE = PromptTemplate(
+    template=multi_query_prompt_template, input_variables=["question"]
+)
+
+
+
+class LineList(BaseModel):
+    # "lines" is the key (attribute name) of the parsed output
+    lines: List[str] = Field(description="Lines of text")
+
+
+class LineListOutputParser(PydanticOutputParser):
+    def __init__(self) -> None:
+        super().__init__(pydantic_object=LineList)
+
+    def parse(self, text: str) -> LineList:
+        lines = text.strip().split("\n")
+        return LineList(lines=lines)
+
+
+def get_retriever(retriever: BaseRetriever, llm):   
+    retriever = MultiQueryRetriever.from_llm(
+        retriever=retriever, llm=llm, 
+    )
+    return retriever
+
+
+def combine_law_docs(docs: List[Document]) -> str:
+    # 将检索到的法条合并为str
+    # 相关法律：《中华人民共和国刑法》
+    # 第一条 XXXX
+    # 相关法律：《中华人民共和国宪法》
+    # 第三条 XXXX
+    law_books = defaultdict(list)
+    for doc in docs:
+        metadata = doc.metadata
+        if 'book' in metadata:
+            law_books[metadata["book"]].append(doc)
+
+    law_str = ""
+    for book, docs in law_books.items():
+        law_str += f"相关法律：《{book}》\n"
+        law_str += "\n".join([doc.page_content.strip("\n") for doc in docs])
+        law_str += "\n"
+
+    return law_str
 
 
 def test_law_db():
@@ -70,10 +133,10 @@ def test_law_db():
     回答: 
     """
 
-    prompt = ChatPromptTemplate.from_template(template)
+    prompt = PromptTemplate.from_template(template)
 
-    # multi_query_retriever
-    retriever = get_retriever(retriever = vectordb.as_retriever(), model = llm)
+    # retriever = vectordb.as_retriever()
+    retriever = get_retriever(vectordb.as_retriever(), llm)
 
     chain = (
         {"context": retriever | combine_law_docs, "question": RunnablePassthrough()}
