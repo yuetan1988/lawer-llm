@@ -6,3 +6,4 @@ reference/*
 **/.pdf
 inputs/
 examples/database/*
+__pycache__/

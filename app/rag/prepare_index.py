@@ -54,7 +54,7 @@ class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
 
 
 def prepare_law_index():
-    loader = LawDirectoryLoader("../inputs/laws")
+    loader = LawDirectoryLoader("../../inputs/laws")
     text_splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=250, chunk_overlap=20
     )
@@ -62,7 +62,7 @@ def prepare_law_index():
     docs = loader.load_and_split(text_splitter=text_splitter)
 
     embedding = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
-    persist_directory = "./database"
+    persist_directory = "../../examples/database/chroma"
 
     vectordb = Chroma.from_documents(
         documents=docs, embedding=embedding, persist_directory=persist_directory

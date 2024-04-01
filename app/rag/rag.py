@@ -1,20 +1,20 @@
 import gradio as gr
 from langchain.chains import RetrievalQA
-from langchain.document_loaders import (
+from langchain_community.document_loaders import (
     PyPDFLoader,
     UnstructuredFileLoader,
     UnstructuredMarkdownLoader,
 )
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from langchain.llms.base import LLM
-from langchain.prompts import PromptTemplate
 from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
+from langchain.llms.base import LLM
+from langchain.prompts import PromptTemplate
 
-from app.rag.llm import InternLLM
+from llm import InternLLM
 
 
 def upload_file(file):
@@ -47,13 +47,13 @@ def get_prompt():
 def load_chain():
     embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
 
-    persist_directory = "./database"
+    persist_directory = "../../examples/database/chroma"
     vectordb = Chroma(
         persist_directory=persist_directory,  # 允许我们将persist_directory目录保存到磁盘上
         embedding_function=embeddings,
     )
 
-    llm = InternLLM(model_name_or_path="../models")
+    llm = InternLLM(model_name_or_path="../../models")
     QA_CHAIN_PROMPT = get_prompt()
 
     retriever = vectordb.as_retriever(search_type="mmr")
@@ -111,7 +111,9 @@ def main():
         with gr.Row():
             with gr.Column(scale=1):
                 embedding_model = gr.Dropdown(
-                    ["text2vec-base", "B3E"], label="向量模型", value="text2vec-base"
+                    ["text2vec-base", "bge-base"],
+                    label="向量模型",
+                    value="text2vec-base",
                 )
                 chat = gr.Dropdown(["InternLM"], label="大语言模型", value="InternLM")
                 top_k = gr.Slider(

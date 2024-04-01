@@ -85,9 +85,13 @@ def build_prompt(examples, prompt_input, tokenizer, data_args):
 
     len_ = len(ins_data)
     sources = [
-        prompt_input.format_map({"instruction": ins_data[i], "input": input_data[i]})
-        if input_data[i] != ""
-        else prompt_input.format_map({"instruction": ins_data[i]})
+        (
+            prompt_input.format_map(
+                {"instruction": ins_data[i], "input": input_data[i]}
+            )
+            if input_data[i] != ""
+            else prompt_input.format_map({"instruction": ins_data[i]})
+        )
         for i in range(len_)
     ]
     sources = [i[: data_args.source_length] for i in sources]
@@ -127,7 +131,9 @@ def tokenize_fn(strings, tokenizer, IGNORE_INDEX):
 
 
 def preprocess(examples, tokenizer, data_args):
-    sources, targets = build_prompt(examples, prompt_input=PROMPT, tokenizer=tokenizer, data_args=data_args)
+    sources, targets = build_prompt(
+        examples, prompt_input=PROMPT, tokenizer=tokenizer, data_args=data_args
+    )
 
     examples = [s + t for s, t in zip(sources, targets)]
     examples_tokenized, sources_tokenized = [
@@ -167,7 +173,7 @@ def build_model(
     if training_args.use_lora:
         from peft import LoraConfig, get_peft_model
 
-        lora_alpha= 32
+        lora_alpha = 32
         LORA_DROPOUT = 0.05
         TARGET_MODULES = ["o_proj", "gate_proj", "down_proj", "up_proj"]
 
