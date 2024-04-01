@@ -8,16 +8,18 @@ import transformers
 from datasets import load_dataset
 from transformers import AutoTokenizer, DataCollatorForSeq2Seq, Trainer
 
+
 PROMPT = (
     "Below is an instruction that describes a task. "
     "Write a response that appropriately completes the request.\n\n"
     "### Instruction:\n{instruction}\n\n### Response:"
 )
+IGNORE_INDEX = -100
 
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: Optional[str] = field(default="../models/")
+    model_name_or_path: Optional[str] = field(default="../../models/")
 
 
 @dataclass
@@ -31,7 +33,7 @@ class DataArguments:
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
-    output_dir: Optional[str] = field(default="./results")
+    output_dir: Optional[str] = field(default="../../examples/results")
     cache_dir: Optional[str] = field(default=None)
     per_device_train_batch_size: int = field(default=1)
     gradient_accumulation_steps: int = field(default=4)
@@ -63,14 +65,14 @@ class TrainingArguments(transformers.TrainingArguments):
 def build_sft_data():
     datasets = load_dataset(
         "json",
-        data_files={"train": "../inputs/train_data.json"},
+        data_files={"train": "../../inputs/train_data.json"},
         # cache_dir=cache_dir,
     )
     train_dataset = datasets["train"]
     return train_dataset
 
 
-def build_prompt(examples, prompt_input):
+def build_prompt(examples, prompt_input, tokenizer, data_args):
     # 注意examples的结构, 包含多个keys, 也就是df的列信息. 而其中的instruction/response等长度则是行信息
 
     if "instruction" in examples:
@@ -85,7 +87,7 @@ def build_prompt(examples, prompt_input):
     sources = [
         prompt_input.format_map({"instruction": ins_data[i], "input": input_data[i]})
         if input_data[i] != ""
-        else prompt_no_input.format_map({"instruction": ins_data[i]})
+        else prompt_input.format_map({"instruction": ins_data[i]})
         for i in range(len_)
     ]
     sources = [i[: data_args.source_length] for i in sources]
@@ -96,7 +98,7 @@ def build_prompt(examples, prompt_input):
     return sources, targets
 
 
-def toeknize_fn(strings, tokenzer, IGNORE_INDEX=-100):
+def tokenize_fn(strings, tokenizer, IGNORE_INDEX):
     """Tokenize a list of strings."""
     tokenized_list = [
         tokenizer(
@@ -124,12 +126,12 @@ def toeknize_fn(strings, tokenzer, IGNORE_INDEX=-100):
     )
 
 
-def preprocess(examples, tokenizer):
-    sources, targets = build_prompt(examples, prompt_input=PROMPT)
+def preprocess(examples, tokenizer, data_args):
+    sources, targets = build_prompt(examples, prompt_input=PROMPT, tokenizer=tokenizer, data_args=data_args)
 
-    examples = [s + t for s, t in zip(source, targets)]
+    examples = [s + t for s, t in zip(sources, targets)]
     examples_tokenized, sources_tokenized = [
-        _tokenize_fn(strings, tokenizer) for strings in (examples, sources)
+        tokenize_fn(strings, tokenizer, IGNORE_INDEX) for strings in (examples, sources)
     ]
     input_ids = examples_tokenized["input_ids"]
     labels = copy.deepcopy(input_ids)
@@ -165,7 +167,7 @@ def build_model(
     if training_args.use_lora:
         from peft import LoraConfig, get_peft_model
 
-        LORA_alpha = 32
+        lora_alpha= 32
         LORA_DROPOUT = 0.05
         TARGET_MODULES = ["o_proj", "gate_proj", "down_proj", "up_proj"]
 
@@ -206,9 +208,9 @@ def train():
     train_dataset = build_sft_data()
 
     train_dataset = train_dataset.map(
-        function=partial(generate_sources_targets, tokenizer=tokenizer),
+        function=partial(preprocess, tokenizer=tokenizer, data_args=data_args),
         batched=True,
-        remove_columns=datasets["train"].column_names,
+        remove_columns=train_dataset.column_names,
         desc="Running tokenizer on train dataset",
         num_proc=20,
     ).shuffle()
