@@ -164,10 +164,19 @@ def main():
         )
     # threads to consume the request
     gr.close_all()
+
     # 启动新的 Gradio 应用，设置分享功能为 True，并使用环境变量 PORT1 指定服务器端口。
-    # demo.launch(share=True, server_port=int(os.environ['PORT1']))
+    # demo.launch(share=True, server_port=int(os.environ['PORT1']))    
     # 直接启动
-    demo.launch()
+    demo.queue(concurrency_count=2).launch(
+        server_name='0.0.0.0',
+        server_port=8888,
+        share=False,
+        show_error=True,
+        debug=True,
+        enable_queue=True,
+        inbrowser=True,
+    )
 
 
 if __name__ == "__main__":

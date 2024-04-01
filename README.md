@@ -30,17 +30,19 @@
 
 ## How to use it
 ### 同步模型权重
-```
-cp -r /root/share/temp/model_repos/internlm-chat-7b /root/lawer-llm/models
+```shell
+ln -s /root/share/new_models/Shanghai_AI_Laboratory/internlm2-chat-7b /root/lawer-llm/models
+
+# cp -r /root/share/temp/model_repos/internlm-chat-7b /root/lawer-llm/models
 ```
 
 ### 激活环境
-```
+```shell
 conda activate xtuner0.1.9
 ```
 
 ### web-demo
-```
+```shell
 # 端口查看开发机ssh连接的端口
 streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
 ```
@@ -48,12 +50,12 @@ streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
 ### sft
 
 数据
-```
+```shell
 git clone https://huggingface.co/datasets/ShengbinYue/DISC-Law-SFT
 git clone https://github.com/liuhuanyong/CrimeKgAssitant
 ```
 
-```
+```shell
 python llm_finetune.py
 ```
 
