@@ -7,3 +7,4 @@ reference/*
 inputs/
 examples/database/*
 __pycache__/
+examples/output/results/*

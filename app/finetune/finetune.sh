@@ -1,14 +1,13 @@
 deepspeed --include localhost:0 finetune.py \
     --deepspeed ds_zero2_no_offload.json \
-    --model_name_or_path internlm-7b \
+    --model_name_or_path ../../models \
     --use_lora true \
     --use_deepspeed true \
-    --data_path hz_sft_datav2 \
     --bf16 true \
     --fp16 false \
-    --output_dir output_refusev2 \
+    --output_dir ../../examples/output_result \
     --num_train_epochs 5 \
-    --per_device_train_batch_size 3 \
+    --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 8 \
     --evaluation_strategy "no" \
@@ -17,4 +16,4 @@ deepspeed --include localhost:0 finetune.py \
     --learning_rate 4e-4 \
     --logging_steps 10 \
     --tf32 False \
-    --model_max_length 2048
+    --model_max_length 512
