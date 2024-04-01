@@ -33,7 +33,7 @@ class DataArguments:
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
-    output_dir: Optional[str] = field(default="../../examples/results")
+    output_dir: Optional[str] = field(default="../../outputs/result")
     cache_dir: Optional[str] = field(default=None)
     per_device_train_batch_size: int = field(default=1)
     gradient_accumulation_steps: int = field(default=4)

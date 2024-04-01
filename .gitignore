@@ -5,6 +5,7 @@ examples/results/*
 reference/*
 **/.pdf
 inputs/
+outputs/
 examples/database/*
 __pycache__/
 examples/output/results/*
