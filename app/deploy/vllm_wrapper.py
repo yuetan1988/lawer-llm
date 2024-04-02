@@ -50,7 +50,9 @@ class vLLMWrapper(object):
         else:
             history = copy.deepcopy(history)
 
-        sampling_params = SamplingParams(temperature=1.0, top_p=0.5, max_tokens=512, stop=self.stop_words_ids)
+        sampling_params = SamplingParams(
+            temperature=1.0, top_p=0.5, max_tokens=512, stop=self.stop_words_ids
+        )
         response = self.model.generate(
             prompt_token_ids=[prompt_tokens],
             sampling_params=sampling_params,
@@ -86,7 +88,7 @@ def infer_by_batch(all_raw_text, llm, system):
     return res
 
 
-if __name__ == '__main__':
-    model = vLLMWrapper('../../models')
+if __name__ == "__main__":
+    model = vLLMWrapper("../../models")
     response, history = model.chat(query="你好", history=None)
     print(response)

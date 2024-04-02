@@ -65,6 +65,7 @@ def load_chain():
         chain_type_kwargs={"prompt": QA_CHAIN_PROMPT},
     )
 
+    qa_chain.return_source_documents = True
     return qa_chain
 
 
@@ -76,16 +77,17 @@ class ModelCenter:
     def __init__(self):
         self.chain = load_chain()
 
-    def qa_chain_self_answer(self, question: str, chat_history: list = []):
+    def qa_chain_self_answer(self, query: str, chat_history: list = []):
         """
         调用不带历史记录的问答链进行回答
         """
         search = []
-        if question == None or len(question) < 1:
+        if query == None or len(query) < 1:
             return "", chat_history, search
         try:
-            chat_history.append((question, self.chain({"query": question})["result"]))
-            return "", chat_history, search
+            result = self.chain({"query": query})
+            chat_history.append((query, result["result"]))
+            return "", chat_history, result["source_documents"]
         except Exception as e:
             return e, chat_history, search
 
@@ -159,24 +161,16 @@ def main():
 
         gr.Markdown(
             """提醒：<br>
-            1. 本页面仅仅是个名为罪恶克星的demo, 不对结果输出负任何法律责任。 <br>
+            1. 本页面仅是名为罪恶克星的demo, 不对结果输出负任何法律责任。 <br>
             """
         )
     # threads to consume the request
     gr.close_all()
 
     # 启动新的 Gradio 应用，设置分享功能为 True，并使用环境变量 PORT1 指定服务器端口。
-    # demo.launch(share=True, server_port=int(os.environ['PORT1']))    
-    # 直接启动
-    demo.queue(concurrency_count=2).launch(
-        server_name='0.0.0.0',
-        server_port=8888,
-        share=False,
-        show_error=True,
-        debug=True,
-        enable_queue=True,
-        inbrowser=True,
-    )
+    # demo.launch(share=True, server_port=int(os.environ['PORT1']))
+    demo.queue()
+    demo.launch()
 
 
 if __name__ == "__main__":
