@@ -9,3 +9,4 @@ outputs/
 examples/database/*
 __pycache__/
 examples/output/results/*
+**/nohup.out
