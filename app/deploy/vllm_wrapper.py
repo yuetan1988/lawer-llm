@@ -2,6 +2,7 @@
 vllm部署, 主要优化在于: batch, paged attention
 """
 
+import os
 import copy
 
 from transformers import AutoTokenizer, GenerationConfig
@@ -13,7 +14,7 @@ class vLLMWrapper(object):
         self,
         model_dir,
         tensor_parallel_size=1,
-        gpu_mempry_utilization=0.9,
+        gpu_memory_utilization=0.9,
         dtype="float16",
         quantization=None,
     ):
@@ -23,10 +24,10 @@ class vLLMWrapper(object):
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_dir, trust_remote_code=True
         )
-        self.tokenizer.eos_token_id = self.generation_config.eos_token_id
+        # self.tokenizer.eos_token_id = self.generation_config.eos_token_id
         self.stop_words_ids = [
-            self.tokenizer.im_start_id,
-            self.tokenizer.im_end_id,
+            # self.tokenizer.im_start_id,
+            # self.tokenizer.im_end_id,
             self.tokenizer.eos_token_id,
         ]
         os.environ["VLLM_USE_MODELSCOPE"] = "True"
@@ -49,7 +50,7 @@ class vLLMWrapper(object):
         else:
             history = copy.deepcopy(history)
 
-        sampling_params = SamplingParams(temperature=1.0, top_p=0.5, max_tokens=512)
+        sampling_params = SamplingParams(temperature=1.0, top_p=0.5, max_tokens=512, stop=self.stop_words_ids)
         response = self.model.generate(
             prompt_token_ids=[prompt_tokens],
             sampling_params=sampling_params,
@@ -83,3 +84,9 @@ def infer_by_batch(all_raw_text, llm, system):
         for output in res
     ]
     return res
+
+
+if __name__ == '__main__':
+    model = vLLMWrapper('../../models')
+    response, history = model.chat(query="你好", history=None)
+    print(response)
