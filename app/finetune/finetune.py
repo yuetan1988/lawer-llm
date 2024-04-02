@@ -25,7 +25,8 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     data_path: str = field(
-        default=None, metadata={"help": "Path to the training data."}
+        default="../../inputs/train_data.json",
+        metadata={"help": "Path to the training data."},
     )
     source_length: int = field(default=512)
     target_length: int = field(default=512)
@@ -49,7 +50,7 @@ class TrainingArguments(transformers.TrainingArguments):
     logging_steps: int = field(default=10)
     learning_rate: float = field(default=2e-4)
     max_grad_norm: float = field(default=0.3)
-    max_steps: int = field(default=100)
+    # max_steps: int = field(default=1000)
     warmup_ratio: float = field(default=0.03)
     lr_scheduler_type: str = field(default="constant")
     remove_unused_columns: bool = field(default=False)
@@ -62,10 +63,10 @@ class TrainingArguments(transformers.TrainingArguments):
     use_deepspeed: bool = field(default=False)
 
 
-def build_sft_data():
+def build_sft_data(data_args):
     datasets = load_dataset(
         "json",
-        data_files={"train": "../../inputs/train_data.json"},
+        data_files={"train": data_args.data_path},
         # cache_dir=cache_dir,
     )
     train_dataset = datasets["train"]
@@ -211,7 +212,7 @@ def train():
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
-    train_dataset = build_sft_data()
+    train_dataset = build_sft_data(data_args)
 
     train_dataset = train_dataset.map(
         function=partial(preprocess, tokenizer=tokenizer, data_args=data_args),

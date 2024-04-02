@@ -7,7 +7,7 @@ deepspeed --include localhost:0 finetune.py \
     --fp16 false \
     --output_dir ../../outputs/result \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 1 \
+    --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 16 \
     --evaluation_strategy "no" \
