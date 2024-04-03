@@ -1,4 +1,8 @@
 from pydantic import BaseModel
+from llm import ChatLLM
+from tools import ToolInterface
+
+PROMPT = ""
 
 
 class Agent(BaseModel):
@@ -28,3 +32,10 @@ class Agent(BaseModel):
         while num_loops < self.max_loops:
             num_loops += 1
             cur_prompy = prompt.format()
+
+
+if __name__ == "__main__":
+    prompt = input("Enter a question / task for the agent: ")
+    agent = Agent()
+    result = agent.run(prompt)
+    print(f"Final answer is {result}")

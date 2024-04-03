@@ -84,7 +84,7 @@ def build_dpo_data(data_args):
     return train_dataset
 
 
-def build_prompt(prompt_and_response):   
+def build_prompt(prompt_and_response):
     search_term = "Assistant:"
     search_term_idx = prompt_and_response.rfind(search_term)
     assert (
