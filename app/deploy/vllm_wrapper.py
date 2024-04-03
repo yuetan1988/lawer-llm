@@ -2,8 +2,8 @@
 vllm部署, 主要优化在于: batch, paged attention
 """
 
-import os
 import copy
+import os
 
 from transformers import AutoTokenizer, GenerationConfig
 from vllm import LLM, SamplingParams

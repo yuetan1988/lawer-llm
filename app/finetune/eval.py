@@ -1,9 +1,9 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 import json
-from tqdm import tqdm
 import os
 
+import torch
+from tqdm import tqdm
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # model_name_or_path = "../../outputs/result"
 model_name_or_path = "../../models"

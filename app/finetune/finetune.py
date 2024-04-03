@@ -6,7 +6,12 @@ from typing import Dict, List, Optional
 
 import transformers
 from datasets import load_dataset
-from transformers import AutoTokenizer, DataCollatorForSeq2Seq, Trainer
+from transformers import (
+    AutoTokenizer,
+    DataCollatorForSeq2Seq,
+    Trainer,
+    AutoModelForCausalLM,
+)
 
 
 PROMPT = (
@@ -47,7 +52,7 @@ class TrainingArguments(transformers.TrainingArguments):
     )
     use_lora: bool = field(default=True)
     save_steps: int = field(default=100)
-    logging_steps: int = field(default=10)
+    logging_steps: int = field(default=50)
     learning_rate: float = field(default=2e-4)
     max_grad_norm: float = field(default=0.3)
     # max_steps: int = field(default=1000)
@@ -153,7 +158,7 @@ def build_model(
     data_args: DataArguments,
 ) -> tuple:
     if training_args.use_deepspeed:
-        model = transformers.AutoModelForCausalLM.from_pretrained(
+        model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
             torch_dtype="auto",
@@ -161,7 +166,7 @@ def build_model(
             trust_remote_code=True,
         )
     else:
-        model = transformers.AutoModelForCausalLM.from_pretrained(
+        model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
             device_map="auto",
@@ -240,9 +245,75 @@ def train():
     trainer.save_model(output_dir=training_args.output_dir)
 
 
+def batch_generate(
+    text_input: List[str],
+    model,
+    tokenizer,
+    use_train_model: bool = True,
+    temp: float = 0.7,
+):
+    text_input_format = [
+        PROMPT.format_map({"instruction": input}) for input in text_input
+    ]
+
+    batch_inputs = tokenizer.batch_encode_plus(
+        text_input_format, padding="longest", return_tensors="pt"
+    )
+    batch_inputs["input_ids"] = batch_inputs["input_ids"].cuda()
+    batch_inputs["attention_mask"] = batch_inputs["attention_mask"].cuda()
+
+    if use_train_model:
+        # with model.disable_adapter():
+        outputs = model.generate(
+            **batch_inputs,
+            max_new_tokens=256,
+            do_sample=True,
+            temperature=temp,
+            top_p=0.8,
+        )
+    else:
+        with model.disable_adapter():
+            outputs = model.generate(
+                **batch_inputs,
+                max_new_tokens=256,
+                do_sample=True,
+                temperature=temp,
+                top_p=0.8,
+            )
+    outputs = tokenizer.batch_decode(
+        outputs.cpu()[:, batch_inputs["input_ids"].shape[-1] :],
+        skip_special_tokens=True,
+    )
+
+    return outputs
+
+
 def infer():
+    base_model_name_or_path = "../../models/"
+    lora_model_name_or_path = "../../outputs/result/checkpoint-100"
+
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model_name_or_path,
+        torch_dtype="auto",
+        # device_map="auto",
+        trust_remote_code=True,
+    ).cuda(0)
+
+    from peft import PeftModel
+
+    model = PeftModel.from_pretrained(model, model_id=lora_model_name_or_path)
+    model.eval()
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_name_or_path, trust_remote_code=True, padding_side="left"
+    )
+
+    test_input = ["张三怒杀阎婆惜, 该当何罪"]
+    outputs = batch_generate(test_input, model, tokenizer)
+    print(outputs)
     return
 
 
 if __name__ == "__main__":
-    train()
+    # train()
+    infer()
