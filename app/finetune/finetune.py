@@ -155,7 +155,6 @@ def preprocess(examples, tokenizer, data_args):
 def build_model(
     model_args: ModelArguments,
     training_args: TrainingArguments,
-    data_args: DataArguments,
 ) -> tuple:
     if training_args.use_deepspeed:
         model = AutoModelForCausalLM.from_pretrained(
@@ -227,7 +226,7 @@ def train():
         num_proc=20,
     ).shuffle()
 
-    model = build_model(model_args, training_args, data_args)
+    model = build_model(model_args, training_args)
     data_collator = DataCollatorForSeq2Seq(
         tokenizer=tokenizer, model=model, label_pad_token_id=IGNORE_INDEX
     )

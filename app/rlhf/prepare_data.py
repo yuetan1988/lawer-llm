@@ -9,8 +9,8 @@ try:
     dataset["test"].to_json("../../inputs/hh-rlhf2/test_hhrlhf.json")
 except:
     ds = MsDataset.load(
-        "AI-ModelScope/hh_rlhf_cn",
-        subset_name="harmless_base_cn",
+        "AI-ModelScope/hh-rlhf",
+        subset_name="harmless-base",
         download_mode=DownloadMode.FORCE_REDOWNLOAD,
     )
     ds_train = ds["train"].to_hf_dataset()

@@ -135,8 +135,6 @@ dpo_trainer.model.save_pretrained("final_checkpoint")
 tokenizer.save_pretrained("final_checkpoint")
 
 
-
-
 # Flush memory
 del dpo_trainer, model, ref_model
 gc.collect()

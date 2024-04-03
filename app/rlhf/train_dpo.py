@@ -105,12 +105,17 @@ def preprocess(sample):
     }
 
 
-def build_model():
+def build_model(model_args, training_args):
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, torch_dtype=torch.float16, load_in_4bit=True
+        model_args.model_name_or_path,
+        torch_dtype=torch.float16,
+        load_in_8bit=True,
+        trust_remote_code=True,
     )
     model.config.use_cache = False
     if training_args.use_lora:
+        from peft import LoraConfig, get_peft_model
+
         LORA_R = 32
         LORA_DROPOUT = 0.05
         TARGET_MODULES = [
@@ -156,7 +161,7 @@ def train():
     with training_args.main_process_first(desc="loading and tokenization"):
         train_dataset = build_dpo_data(data_args)
 
-    model = build_model(model_args, training_args, data_args)
+    model = build_model(model_args, training_args)
     model_ref = None
 
     dpo_trainer = DPOTrainer(
@@ -165,7 +170,7 @@ def train():
         args=training_args,
         beta=0.1,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        # eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         max_length=data_args.source_length,
         max_target_length=data_args.target_length,
