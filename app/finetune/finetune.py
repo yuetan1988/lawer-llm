@@ -245,6 +245,23 @@ def train():
     trainer.save_model(output_dir=training_args.output_dir)
 
 
+def lora_save():
+    base_model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        return_dict=True,
+        torch_dtype=torch.float16,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    # Merge base model with the adapter
+    model = PeftModel.from_pretrained(base_model, "final_checkpoint")
+    model = model.merge_and_unload()
+
+    # Save model and tokenizer
+    model.save_pretrained(new_model)
+    tokenizer.save_pretrained(new_model)
+
+
 def batch_generate(
     text_input: List[str],
     model,

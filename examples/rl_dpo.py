@@ -89,13 +89,13 @@ peft_config = LoraConfig(
 
 # Model to fine-tune
 model = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.float16, load_in_4bit=True
+    model_name, torch_dtype=torch.float16, load_in_8bit=True
 )
 model.config.use_cache = False
 
 # Reference model
 ref_model = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.float16, load_in_4bit=True
+    model_name, torch_dtype=torch.float16, load_in_8bit=True
 )
 
 # Training arguments
@@ -133,6 +133,9 @@ dpo_trainer.train()
 
 dpo_trainer.model.save_pretrained("final_checkpoint")
 tokenizer.save_pretrained("final_checkpoint")
+
+
+
 
 # Flush memory
 del dpo_trainer, model, ref_model

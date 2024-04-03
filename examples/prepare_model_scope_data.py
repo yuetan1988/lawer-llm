@@ -1,8 +1,10 @@
 from functools import partial
 
+from datasets import load_dataset
 import transformers
 from modelscope import AutoModel, AutoTokenizer, snapshot_download
 from modelscope.msdatasets import MsDataset
+
 
 ds = MsDataset.load(
     "AI-ModelScope/DISC-Law-SFT",
