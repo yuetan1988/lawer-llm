@@ -1,41 +1,49 @@
-import os
 import gc
-import torch
+import os
 
-import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, BitsAndBytesConfig
-from datasets import load_dataset
-from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
-from trl import DPOTrainer
 import bitsandbytes as bnb
-from google.colab import userdata
+import torch
+import transformers
 import wandb
+from datasets import load_dataset
+from google.colab import userdata
+from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    TrainingArguments,
+)
+from trl import DPOTrainer
 
 # Defined in the secrets tab in Google Colab
-hf_token = userdata.get('huggingface')
-wb_token = userdata.get('wandb')
+hf_token = userdata.get("huggingface")
+wb_token = userdata.get("wandb")
 wandb.login(key=wb_token)
 
 model_name = "teknium/OpenHermes-2.5-Mistral-7B"
 new_model = "NeuralHermes-2.5-Mistral-7B"
 
+
 def chatml_format(example):
     # Format system
-    if len(example['system']) > 0:
-        message = {"role": "system", "content": example['system']}
+    if len(example["system"]) > 0:
+        message = {"role": "system", "content": example["system"]}
         system = tokenizer.apply_chat_template([message], tokenize=False)
     else:
         system = ""
 
     # Format instruction
-    message = {"role": "user", "content": example['question']}
-    prompt = tokenizer.apply_chat_template([message], tokenize=False, add_generation_prompt=True)
+    message = {"role": "user", "content": example["question"]}
+    prompt = tokenizer.apply_chat_template(
+        [message], tokenize=False, add_generation_prompt=True
+    )
 
     # Format chosen answer
-    chosen = example['chosen'] + "<|im_end|>\n"
+    chosen = example["chosen"] + "<|im_end|>\n"
 
     # Format rejected answer
-    rejected = example['rejected'] + "<|im_end|>\n"
+    rejected = example["rejected"] + "<|im_end|>\n"
 
     return {
         "prompt": system + prompt,
@@ -43,8 +51,9 @@ def chatml_format(example):
         "rejected": rejected,
     }
 
+
 # Load dataset
-dataset = load_dataset("Intel/orca_dpo_pairs")['train']
+dataset = load_dataset("Intel/orca_dpo_pairs")["train"]
 
 # Save columns
 original_columns = dataset.column_names
@@ -55,10 +64,7 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left"
 
 # Format dataset
-dataset = dataset.map(
-    chatml_format,
-    remove_columns=original_columns
-)
+dataset = dataset.map(chatml_format, remove_columns=original_columns)
 
 # Print sample
 dataset[1]
@@ -70,22 +76,26 @@ peft_config = LoraConfig(
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
-    target_modules=['k_proj', 'gate_proj', 'v_proj', 'up_proj', 'q_proj', 'o_proj', 'down_proj']
+    target_modules=[
+        "k_proj",
+        "gate_proj",
+        "v_proj",
+        "up_proj",
+        "q_proj",
+        "o_proj",
+        "down_proj",
+    ],
 )
 
 # Model to fine-tune
 model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float16,
-    load_in_4bit=True
+    model_name, torch_dtype=torch.float16, load_in_4bit=True
 )
 model.config.use_cache = False
 
 # Reference model
 ref_model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float16,
-    load_in_4bit=True
+    model_name, torch_dtype=torch.float16, load_in_4bit=True
 )
 
 # Training arguments
@@ -152,16 +162,16 @@ tokenizer.push_to_hub(new_model, use_temp_dir=False, token=hf_token)
 # Format prompt
 message = [
     {"role": "system", "content": "You are a helpful assistant chatbot."},
-    {"role": "user", "content": "What is a Large Language Model?"}
+    {"role": "user", "content": "What is a Large Language Model?"},
 ]
 tokenizer = AutoTokenizer.from_pretrained(new_model)
-prompt = tokenizer.apply_chat_template(message, add_generation_prompt=True, tokenize=False)
+prompt = tokenizer.apply_chat_template(
+    message, add_generation_prompt=True, tokenize=False
+)
 
 # Create pipeline
 pipeline = transformers.pipeline(
-    "text-generation",
-    model=new_model,
-    tokenizer=tokenizer
+    "text-generation", model=new_model, tokenizer=tokenizer
 )
 
 # Generate text
@@ -173,4 +183,4 @@ sequences = pipeline(
     num_return_sequences=1,
     max_length=200,
 )
-print(sequences[0]['generated_text'])
+print(sequences[0]["generated_text"])

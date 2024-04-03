@@ -299,7 +299,7 @@ def infer():
         trust_remote_code=True,
     ).cuda(0)
 
-    from peft import PeftModel
+    from peft import PeftModel, AutoPeftModelForCausalLM
 
     model = PeftModel.from_pretrained(model, model_id=lora_model_name_or_path)
     model.eval()
@@ -311,6 +311,14 @@ def infer():
     test_input = ["张三怒杀阎婆惜, 该当何罪"]
     outputs = batch_generate(test_input, model, tokenizer)
     print(outputs)
+
+    # model = AutoPeftModelForCausalLM.from_pretrained(
+    #     args.output_dir,
+    #     torch_dtype=torch.float16,
+    #     low_cpu_mem_usage=True,
+    # )
+    # merged_model = model.merge_and_unload()
+    # merged_model.save_pretrained(args.output_dir,safe_serialization=True, max_shard_size="2GB")
     return
 
 

@@ -1,13 +1,12 @@
 import copy
 import logging
-from typing import Optional, Dict, List
 from dataclasses import dataclass, field
-from datasets import load_dataset
 from functools import partial
-import transformers
-from transformers import AutoTokenizer
-from transformers import DataCollatorForSeq2Seq, Trainer
+from typing import Dict, List, Optional
 
+import transformers
+from datasets import load_dataset
+from transformers import AutoTokenizer, DataCollatorForSeq2Seq, Trainer
 
 IGNORE_INDEX = -100
 PROMPT_DICT = {
@@ -22,7 +21,10 @@ PROMPT_DICT = {
         "### Instruction:\n{instruction}\n\n### Response:"
     ),
 }
-prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+prompt_input, prompt_no_input = (
+    PROMPT_DICT["prompt_input"],
+    PROMPT_DICT["prompt_no_input"],
+)
 
 
 def _tokenize_fn(strings, tokenizer):
@@ -37,11 +39,13 @@ def _tokenize_fn(strings, tokenizer):
         )
         for text in strings
     ]
-    input_ids = labels = [tokenized.input_ids[0]
-                          for tokenized in tokenized_list]
-    ne_pad_token_id = IGNORE_INDEX if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    input_ids = labels = [tokenized.input_ids[0] for tokenized in tokenized_list]
+    ne_pad_token_id = (
+        IGNORE_INDEX if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    )
     input_ids_lens = labels_lens = [
-        tokenized.input_ids.ne(ne_pad_token_id).sum().item() for tokenized in tokenized_list
+        tokenized.input_ids.ne(ne_pad_token_id).sum().item()
+        for tokenized in tokenized_list
     ]
     return dict(
         input_ids=input_ids,
@@ -52,14 +56,15 @@ def _tokenize_fn(strings, tokenizer):
 
 
 def preprocess(
-        sources,
-        targets,
-        tokenizer: transformers.PreTrainedTokenizer,
+    sources,
+    targets,
+    tokenizer: transformers.PreTrainedTokenizer,
 ):
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized = [_tokenize_fn(
-        strings, tokenizer) for strings in (examples, sources)]
+    examples_tokenized, sources_tokenized = [
+        _tokenize_fn(strings, tokenizer) for strings in (examples, sources)
+    ]
     input_ids = examples_tokenized["input_ids"]
     labels = copy.deepcopy(input_ids)
     for label, source_len in zip(labels, sources_tokenized["input_ids_lens"]):
@@ -68,52 +73,58 @@ def preprocess(
 
 
 def generate_sources_targets(examples, tokenizer: transformers.PreTrainedTokenizer):
-    # 注意examples的结构, 包含多个keys, 也就是df的列信息. 而其中的instruction/response等长度则是行信息    
+    # 注意examples的结构, 包含多个keys, 也就是df的列信息. 而其中的instruction/response等长度则是行信息
 
-    if 'instruction' in examples:
-        ins_data = examples['instruction']
-        input_data = examples['input']
+    if "instruction" in examples:
+        ins_data = examples["instruction"]
+        input_data = examples["input"]
     else:
-        ins_data = examples['input']
-        input_data = [''] * len(ins_data)
-    output = examples['output']
+        ins_data = examples["input"]
+        input_data = [""] * len(ins_data)
+    output = examples["output"]
 
     len_ = len(ins_data)
     # print(len_, len(examples), len(input_data), len(output), 'instruction' in examples)
     # assert 0==1
 
-    sources = [prompt_input.format_map({'instruction': ins_data[i], 'input': input_data[i]}) if input_data[i] != "" 
-    else prompt_no_input.format_map({'instruction': ins_data[i]})
-    for i in range(len_)]
-    sources = [i[:data_args.source_length] for i in sources]
+    sources = [
+        (
+            prompt_input.format_map(
+                {"instruction": ins_data[i], "input": input_data[i]}
+            )
+            if input_data[i] != ""
+            else prompt_no_input.format_map({"instruction": ins_data[i]})
+        )
+        for i in range(len_)
+    ]
+    sources = [i[: data_args.source_length] for i in sources]
     targets = [
-        f"{example[:data_args.target_length-1]}{tokenizer.eos_token}" for example in output]
+        f"{example[:data_args.target_length-1]}{tokenizer.eos_token}"
+        for example in output
+    ]
 
-    input_output = preprocess(
-        sources=sources, targets=targets, tokenizer=tokenizer)
-    examples['input_ids'] = input_output['input_ids']
-    examples['labels'] = input_output['labels']
+    input_output = preprocess(sources=sources, targets=targets, tokenizer=tokenizer)
+    examples["input_ids"] = input_output["input_ids"]
+    examples["labels"] = input_output["labels"]
     return examples
 
 
 datasets = load_dataset(
-    'json',
-    data_files={'train' :'../inputs/train_data.json'},
+    "json",
+    data_files={"train": "../inputs/train_data.json"},
     # cache_dir=cache_dir,
 )
 
-train_dataset = datasets['train']
+train_dataset = datasets["train"]
 # print(train_dataset)
 # print(train_dataset[0])
 # print('-' * 50)
 # print(train_dataset[1])
 
 
-
 @dataclass
 class ModelArguments:
-    model_name_or_path: Optional[str] = field(default='../models/')
-
+    model_name_or_path: Optional[str] = field(default="../models/")
 
 
 @dataclass
@@ -139,23 +150,26 @@ class TrainingArguments(transformers.TrainingArguments):
         },
     )
     use_lora: bool = field(default=True)
-    save_steps:int = field(default=100)
-    logging_steps:int = field(default=10)
-    learning_rate:float = field(default=2e-4)
-    max_grad_norm:float = field(default=0.3)
-    max_steps:int = field(default=100)
-    warmup_ratio:float = field(default=0.03)
-    lr_scheduler_type:str = field(default="constant")
-    remove_unused_columns:bool = field(default=False)
-    group_by_length:bool = field(default=True, metadata={
+    save_steps: int = field(default=100)
+    logging_steps: int = field(default=10)
+    learning_rate: float = field(default=2e-4)
+    max_grad_norm: float = field(default=0.3)
+    max_steps: int = field(default=100)
+    warmup_ratio: float = field(default=0.03)
+    lr_scheduler_type: str = field(default="constant")
+    remove_unused_columns: bool = field(default=False)
+    group_by_length: bool = field(
+        default=True,
+        metadata={
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
-        },)
+        },
+    )
     use_deepspeed: bool = field(default=False)
 
 
 parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments)
-    )
+    (ModelArguments, DataArguments, TrainingArguments)
+)
 model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
 
@@ -176,7 +190,7 @@ train_dataset = train_dataset.map(
     batched=True,
     remove_columns=datasets["train"].column_names,
     desc="Running tokenizer on train dataset",
-    num_proc=20
+    num_proc=20,
 ).shuffle()
 
 # train_dataset = train_dataset.remove_columns(datasets["train"].column_names)
@@ -184,29 +198,30 @@ train_dataset = train_dataset.map(
 print(train_dataset[0])
 
 
-
-def build_model(model_args: ModelArguments, training_args: TrainingArguments, data_args: DataArguments) -> tuple:
+def build_model(
+    model_args: ModelArguments,
+    training_args: TrainingArguments,
+    data_args: DataArguments,
+) -> tuple:
 
     if training_args.use_deepspeed:
 
         model = transformers.AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            torch_dtype='auto',
+            torch_dtype="auto",
             # if model_args.model_name_or_path.find("falcon") != -1 else False
-            trust_remote_code=True
-
+            trust_remote_code=True,
         )
     else:
         model = transformers.AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            device_map='auto',
+            device_map="auto",
             # torch_dtype='auto',
             load_in_8bit=True,
             # if model_args.model_name_or_path.find("falcon") != -1 else False
-            trust_remote_code=True
-
+            trust_remote_code=True,
         )
 
     if training_args.use_lora:
@@ -214,12 +229,11 @@ def build_model(model_args: ModelArguments, training_args: TrainingArguments, da
         logging.warning("Loading model to Lora")
 
         from peft import LoraConfig, get_peft_model
+
         LORA_R = 32
         # LORA_ALPHA = 16
         LORA_DROPOUT = 0.05
-        TARGET_MODULES = [
-            "o_proj","gate_proj", "down_proj", "up_proj"
-        ]
+        TARGET_MODULES = ["o_proj", "gate_proj", "down_proj", "up_proj"]
 
         config = LoraConfig(
             r=LORA_R,
@@ -236,13 +250,14 @@ def build_model(model_args: ModelArguments, training_args: TrainingArguments, da
 
     # model.is_parallelizable = True
     # model.model_parallel = True
-    # torch.cuda.empty_cache()   
+    # torch.cuda.empty_cache()
     return model
 
 
 def train():
     parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments))
+        (ModelArguments, DataArguments, TrainingArguments)
+    )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     model = build_model(model_args, training_args, data_args)
@@ -252,16 +267,18 @@ def train():
     #     train_dataset = make_train_dataset(
     #         tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
 
-    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model,
-                                           label_pad_token_id=IGNORE_INDEX
-                                           )
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=tokenizer, model=model, label_pad_token_id=IGNORE_INDEX
+    )
 
-    trainer = Trainer(model=model,
-                      tokenizer=tokenizer,
-                      args=training_args,
-                      train_dataset=train_dataset,
-                      eval_dataset=None,
-                      data_collator=data_collator)
+    trainer = Trainer(
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=None,
+        data_collator=data_collator,
+    )
     trainer.train()
     trainer.save_state()
     trainer.save_model(output_dir=training_args.output_dir)
@@ -269,6 +286,8 @@ def train():
 
 if __name__ == "__main__":
     logging.basicConfig(
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     train()

@@ -1,18 +1,23 @@
+import json
+import logging
 import os
+import pathlib
 import re
 import sys
-import json
 import time
-import logging
-import pathlib
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
+import bitsandbytes as bnb
 import numpy as np
 import pandas as pd
-from typing import Optional, Dict, List
-from dataclasses import dataclass, field
 import torch
-from torch.utils.data import Dataset
+import transformers
+from accelerate import Accelerator
+from accelerate.utils import DistributedType
 from datasets import load_dataset
-import bitsandbytes as bnb
+from deepspeed import zero
+from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 from peft import (
     LoraConfig,
     PeftConfig,
@@ -20,29 +25,28 @@ from peft import (
     get_peft_config,
     get_peft_model,
     get_peft_model_state_dict,
-    prepare_model_for_kbit_training,
     prepare_model_for_int8_training,
+    prepare_model_for_kbit_training,
     set_peft_model_state_dict,
 )
-import transformers
-from transformers.training_args import TrainingArguments
+from torch.utils.data import Dataset
 from transformers import (
-    AutoTokenizer,
     AutoConfig,
     AutoModel,
     AutoModelForCausalLM,
+    AutoTokenizer,
     BitsAndBytesConfig,
+    DataCollatorForSeq2Seq,
+    GPTQConfig,
+    HfArgumentParser,
     LlamaForCausalLM,
     LlamaTokenizer,
-    DataCollatorForSeq2Seq,
-    HfArgumentParser,
     Seq2SeqTrainingArguments,
+    Trainer,
+    deepspeed,
+    set_seed,
 )
-from transformers import Trainer, GPTQConfig, deepspeed, set_seed
-from deepspeed import zero
-from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
-from accelerate import Accelerator
-from accelerate.utils import DistributedType
+from transformers.training_args import TrainingArguments
 from trl import SFTTrainer
 
 # from rouge_chinese import Rouge
@@ -51,15 +55,13 @@ from trl import SFTTrainer
 logger = logging.getLogger(__name__)
 
 
+train_dataset = load_dataset(path="/root/share/datasets/openassistant-guanaco")
 
-train_dataset = load_dataset(path = '/root/share/datasets/openassistant-guanaco')
-
-print(train_dataset['train'])
-print(train_dataset['train'][0]['text'])
-
+print(train_dataset["train"])
+print(train_dataset["train"][0]["text"])
 
 
-model_name_or_path = '../models/'
+model_name_or_path = "../models/"
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -68,21 +70,22 @@ bnb_config = BitsAndBytesConfig(
     llm_int8_has_fp16_weight=False,
     bnb_4bit_compute_dtype=torch.float16,
     bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type='nf4'
+    bnb_4bit_quant_type="nf4",
 )
-
 
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name_or_path,
     # quantization_config=bnb_config,
     load_in_8bit=True,
-    trust_remote_code=True
+    trust_remote_code=True,
 )
 model.config.use_cache = False
 
 
-tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, encode_special_tokens=True, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(
+    model_name_or_path, encode_special_tokens=True, trust_remote_code=True
+)
 tokenizer.pad_token = tokenizer.eos_token
 
 # chat
@@ -102,10 +105,10 @@ peft_config = LoraConfig(
         "k_proj",
         "v_proj",
         # "o_proj"
-        ],
+    ],
     r=lora_r,
     bias="none",
-    task_type="CAUSAL_LM"
+    task_type="CAUSAL_LM",
 )
 
 output_dir = "./results"
@@ -136,7 +139,6 @@ training_arguments = TrainingArguments(
     group_by_length=True,
     lr_scheduler_type=lr_scheduler_type,
 )
-
 
 
 max_seq_length = 512

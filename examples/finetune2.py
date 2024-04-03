@@ -1,20 +1,30 @@
+import json
+import logging
 import os
+import pathlib
 import re
 import sys
-import json
 import time
-import logging
-import pathlib
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
+import bitsandbytes as bnb
 import numpy as np
 import pandas as pd
-from typing import Optional, Dict, List
-from dataclasses import dataclass, field
 import torch
+import transformers
+from accelerate import Accelerator
+from accelerate.utils import DistributedType
+
 # from torch.utils.data import Dataset
-from datasets import load_dataset
-from datasets import Features
+from datasets import Features, load_dataset
 from datasets.arrow_dataset import Dataset
-import bitsandbytes as bnb
+from deepspeed import zero
+from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+
+# from rouge_chinese import Rouge
+# from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from modelscope.msdatasets import MsDataset
 from peft import (
     LoraConfig,
     PeftConfig,
@@ -22,43 +32,36 @@ from peft import (
     get_peft_config,
     get_peft_model,
     get_peft_model_state_dict,
-    prepare_model_for_kbit_training,
     prepare_model_for_int8_training,
+    prepare_model_for_kbit_training,
     set_peft_model_state_dict,
 )
-import transformers
-from transformers.training_args import TrainingArguments
 from transformers import (
-    AutoTokenizer,
     AutoConfig,
     AutoModel,
     AutoModelForCausalLM,
+    AutoTokenizer,
     BitsAndBytesConfig,
+    DataCollatorForSeq2Seq,
+    GPTQConfig,
+    HfArgumentParser,
     LlamaForCausalLM,
     LlamaTokenizer,
-    DataCollatorForSeq2Seq,
-    HfArgumentParser,
     Seq2SeqTrainingArguments,
+    Trainer,
+    deepspeed,
     pipeline,
+    set_seed,
 )
-from transformers import Trainer, GPTQConfig, deepspeed, set_seed
-from deepspeed import zero
-from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
-from accelerate import Accelerator
-from accelerate.utils import DistributedType
+from transformers.training_args import TrainingArguments
 from trl import SFTTrainer
-
-# from rouge_chinese import Rouge
-# from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-from modelscope.msdatasets import MsDataset
 
 logger = logging.getLogger(__name__)
 
 
-
 @dataclass
 class ModelArguments:
-    model_name_or_path: Optional[str] = field(default='../models/')
+    model_name_or_path: Optional[str] = field(default="../models/")
 
 
 @dataclass
@@ -82,17 +85,20 @@ class TrainingArguments(transformers.TrainingArguments):
         },
     )
     use_lora: bool = field(default=True)
-    save_steps:int = field(default=100)
-    logging_steps:int = field(default=10)
-    learning_rate:float = field(default=2e-4)
-    max_grad_norm:float = field(default=0.3)
-    max_steps:int = field(default=100)
-    warmup_ratio:float = field(default=0.03)
-    lr_scheduler_type:str = field(default="constant")
-    remove_unused_columns:bool = field(default=False)
-    group_by_length:bool = field(default=True, metadata={
+    save_steps: int = field(default=100)
+    logging_steps: int = field(default=10)
+    learning_rate: float = field(default=2e-4)
+    max_grad_norm: float = field(default=0.3)
+    max_steps: int = field(default=100)
+    warmup_ratio: float = field(default=0.03)
+    lr_scheduler_type: str = field(default="constant")
+    remove_unused_columns: bool = field(default=False)
+    group_by_length: bool = field(
+        default=True,
+        metadata={
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
-        },)
+        },
+    )
 
 
 class SupervisedDataset(Dataset):
@@ -166,7 +172,12 @@ class SupervisedDataset(Dataset):
 
 def gen_batches_train():
     # https://plainenglish.io/community/fine-tuning-mistral-7b-model-with-your-custom-data-010eb6
-    ds = MsDataset.load('AI-ModelScope/DISC-Law-SFT', subset_name='default', split='train', cache_dir='../inputs')
+    ds = MsDataset.load(
+        "AI-ModelScope/DISC-Law-SFT",
+        subset_name="default",
+        split="train",
+        cache_dir="../inputs",
+    )
     total_samples = 10000
     val_pct = 0.1
     train_limit = int(total_samples * (1 - val_pct))
@@ -177,11 +188,11 @@ def gen_batches_train():
         if counter >= train_limit:
             break
 
-        prompt = sample['input']
-        response = sample['output']
-        new_text_format = f'### Human: {prompt} ### Assistant: {response}'
-    
-        trainbatch.append({'text': new_text_format})
+        prompt = sample["input"]
+        response = sample["output"]
+        new_text_format = f"### Human: {prompt} ### Assistant: {response}"
+
+        trainbatch.append({"text": new_text_format})
         counter += 1
 
     return trainbatch
@@ -190,16 +201,16 @@ def gen_batches_train():
 def back():
     def read_jsonl(path):
         data = []
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             for line in f:
                 data.append(json.loads(line))
         return data
 
-    train_data_list = read_jsonl('./output_examples_train.jsonl')
-    valid_data_list = read_jsonl('./output_examples_val.jsonl')
+    train_data_list = read_jsonl("./output_examples_train.jsonl")
+    valid_data_list = read_jsonl("./output_examples_val.jsonl")
 
-    tr_data_dict = {'text': [item['text'] for item in train_data_list]}
-    val_data_dict = {'text': [item['text'] for item in valid_data_list]}
+    tr_data_dict = {"text": [item["text"] for item in train_data_list]}
+    val_data_dict = {"text": [item["text"] for item in valid_data_list]}
 
     train_dataset = Dataset.from_dict(tr_data_dict)
     valid_dataset = Dataset.from_dict(val_data_dict)
@@ -256,7 +267,6 @@ def train():
     # dataset = MsDataset.load('AI-ModelScope/DISC-Law-SFT', subset_name='default', split='train', cache_dir='../inputs')
     # ds =  MsDataset.load('Daxusell/china_law_set')
 
-
     # column_names = list(next(iter(dataset)).keys())
     # print('*'*20, column_names)
 
@@ -280,7 +290,6 @@ def train():
 
     train_dataset = Dataset.from_list(gen_batches_train())
     print(train_dataset[0])
- 
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -289,7 +298,7 @@ def train():
         llm_int8_has_fp16_weight=False,
         bnb_4bit_compute_dtype=torch.float16,
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type='nf4'
+        bnb_4bit_quant_type="nf4",
     )
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -301,10 +310,9 @@ def train():
     )
     model.config.use_cache = False
     # response, history = model.chat(tokenizer, "please provide three suggestions about time management", history=[])
-    # print(response)    
-    
-    
-    if training_args.use_lora:  
+    # print(response)
+
+    if training_args.use_lora:
         from peft import LoraConfig, TaskType, get_peft_model
 
         peft_config = LoraConfig(
@@ -315,21 +323,21 @@ def train():
                 "k_proj",
                 "v_proj",
                 # "o_proj"
-                ],
+            ],
             r=64,
             bias="none",
-            task_type="CAUSAL_LM"
-        )       
+            task_type="CAUSAL_LM",
+        )
         # model.enable_input_require_grads()
         # model = get_peft_model(model, peft_config)
         # model.print_trainable_parameters()
-   
+
     # trainer = transformers.Trainer(
     #     model=model, args=training_args, train_dataset=train_dataset["train"], tokenizer=tokenizer
     # )
     # trainer.train()
     # trainer.save_state()
-    # trainer.save_model(output_dir=training_args.output_dir)  
+    # trainer.save_model(output_dir=training_args.output_dir)
 
     trainer = SFTTrainer(
         model=model,
@@ -346,10 +354,14 @@ def train():
     trainer.model.save_pretrained("internlm-2-7b-layer")
 
     if False:
-        model = AutoPeftModelForCausalLM.from_pretrained(output_dir, device_map="auto", torch_dtype=torch.bfloat16)
+        model = AutoPeftModelForCausalLM.from_pretrained(
+            output_dir, device_map="auto", torch_dtype=torch.bfloat16
+        )
         model = model.merge_and_unload()
 
-        output_merged_dir = os.path.join(script_args.output_dir, "final_merged_checkpoint")
+        output_merged_dir = os.path.join(
+            script_args.output_dir, "final_merged_checkpoint"
+        )
         model.save_pretrained(output_merged_dir, safe_serialization=True)
 
 
@@ -369,9 +381,11 @@ def inference():
     tokenizer.padding_side = "right"
 
     prompt = "What is a large language model?"
-    pipe = pipeline(task="text-generation", model=model, tokenizer=tokenizer, max_length=200)
+    pipe = pipeline(
+        task="text-generation", model=model, tokenizer=tokenizer, max_length=200
+    )
     result = pipe(f"<s>[INST] {prompt} [/INST]")
-    print(result[0]['generated_text'])
+    print(result[0]["generated_text"])
 
 
 if __name__ == "__main__":
