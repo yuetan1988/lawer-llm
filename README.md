@@ -68,3 +68,4 @@ python llm_finetune.py
 - https://github.com/CSHaitao/Awesome-LegalAI-Resources
 - https://github.com/lvwzhen/law-cn-ai
 - https://github.com/LiuHC0428/LAW-GPT
+- 
