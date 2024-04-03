@@ -2,7 +2,6 @@ from datasets import load_dataset
 from modelscope import MsDataset
 from modelscope.utils.constant import DownloadMode
 
-
 try:
     dataset = load_dataset("Anthropic/hh-rlhf")
     dataset["train"].to_json("../../inputs/hh-rlhf2/train_hhrlhf.json")

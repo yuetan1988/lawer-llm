@@ -7,12 +7,11 @@ from typing import Dict, List, Optional
 import transformers
 from datasets import load_dataset
 from transformers import (
+    AutoModelForCausalLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
     Trainer,
-    AutoModelForCausalLM,
 )
-
 
 PROMPT = (
     "Below is an instruction that describes a task. "
@@ -60,7 +59,7 @@ class TrainingArguments(transformers.TrainingArguments):
     lr_scheduler_type: str = field(default="constant")
     remove_unused_columns: bool = field(default=False)
     group_by_length: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
         },
@@ -315,7 +314,7 @@ def infer():
         trust_remote_code=True,
     ).cuda(0)
 
-    from peft import PeftModel, AutoPeftModelForCausalLM
+    from peft import AutoPeftModelForCausalLM, PeftModel
 
     model = PeftModel.from_pretrained(model, model_id=lora_model_name_or_path)
     model.eval()

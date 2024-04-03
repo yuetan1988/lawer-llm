@@ -25,7 +25,6 @@
     - multi-vector
     - rerank
 - Agent
-- TBD
 
 
 ## How to use it

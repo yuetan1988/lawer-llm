@@ -1,8 +1,8 @@
 import gc
-import os
 import logging
-from typing import Dict, List, Optional
+import os
 from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
 import bitsandbytes as bnb
 import torch
@@ -57,7 +57,7 @@ class TrainingArguments(transformers.TrainingArguments):
     lr_scheduler_type: str = field(default="constant")
     remove_unused_columns: bool = field(default=False)
     group_by_length: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": "Group sequences into batches with same length. Saves memory and speeds up training considerably."
         },
@@ -84,8 +84,7 @@ def build_dpo_data(data_args):
     return train_dataset
 
 
-def build_prompt(prompt_and_response):
-    # TODO
+def build_prompt(prompt_and_response):   
     search_term = "Assistant:"
     search_term_idx = prompt_and_response.rfind(search_term)
     assert (
@@ -154,7 +153,7 @@ def train():
         encode_special_tokens=True,
         trust_remote_code=True,
         # model_max_length=training_args.model_max_length,
-        cache_dir=training_args.cache_dir,
+        # cache_dir=training_args.cache_dir,
     )
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -177,7 +176,7 @@ def train():
         max_prompt_length=data_args.prompt_length,
         generate_during_eval=False,
     )
-    trainer.train()
+    dpo_trainer.train()
 
 
 if __name__ == "__main__":
