@@ -3,6 +3,7 @@ from typing import Any, Iterable, List
 from langchain.docstore.document import Document
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import (
+    MarkdownTextSplitter,
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -17,6 +18,7 @@ class LawDirectoryLoader(DirectoryLoader):
 
 
 class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
+    # https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
     def __init__(self, **kwargs):
         separators = [r"第\S*条 "]
         is_separator_regex = True
@@ -53,8 +55,8 @@ class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
         return self.create_documents(texts, metadatas=metadatas)
 
 
-def prepare_law_index():
-    loader = LawDirectoryLoader("../../inputs/laws")
+def prepare_law_index(doc_directory, persist_directory):
+    loader = LawDirectoryLoader(doc_directory)
     text_splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=250, chunk_overlap=20
     )
@@ -62,7 +64,6 @@ def prepare_law_index():
     docs = loader.load_and_split(text_splitter=text_splitter)
 
     embedding = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
-    persist_directory = "../../examples/database/chroma"
 
     vectordb = Chroma.from_documents(
         documents=docs, embedding=embedding, persist_directory=persist_directory
@@ -70,5 +71,32 @@ def prepare_law_index():
     vectordb.persist()
 
 
+def test_langchain_retrieval():
+    def pretty_print_docs(docs):
+        print(
+            f"\n{'-' * 100}\n".join(
+                [f"Document {i+1}:\n\n" + d.page_content for i, d in enumerate(docs)]
+            )
+        )
+
+    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
+
+    persist_directory = "../../examples/database/chroma"
+
+    vectordb = Chroma(
+        persist_directory=persist_directory,
+        embedding_function=embeddings,
+    )
+
+    retriever = vectordb.as_retriever(search_type="mmr")
+
+    docs = retriever.get_relevant_documents("我是来读宪法的，第一条就是?")
+    pretty_print_docs(docs)
+
+
 if __name__ == "__main__":
-    prepare_law_index()
+    doc_directory = "../../inputs/laws"
+    persist_directory = "../../examples/database/chroma"
+    prepare_law_index(doc_directory)
+
+    # test_langchain_retrieval()
