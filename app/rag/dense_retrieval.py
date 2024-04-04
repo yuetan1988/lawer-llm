@@ -39,6 +39,14 @@ class DenseRetrieval:
         pretty_print_docs(docs)
 
 
+class CacheRetrieval:
+    def __init__(self):
+        pass
+
+    def clear_all(self):
+        pass
+
+
 def pretty_print_docs(docs):
     print(
         f"\n{'-' * 100}\n".join(

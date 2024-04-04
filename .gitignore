@@ -11,3 +11,4 @@ __pycache__/
 examples/output/results/*
 **/nohup.out
 temp/*
+/open-retrievals

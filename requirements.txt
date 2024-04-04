@@ -8,3 +8,4 @@ chromadb
 gradio
 deepspeed
 duckduckgo_search
+open-retrievals
