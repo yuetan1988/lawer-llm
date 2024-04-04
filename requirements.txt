@@ -1,4 +1,3 @@
-
 langchain
 langchain-community
 tiktoken
@@ -8,3 +7,4 @@ sentence-transformers
 chromadb
 gradio
 deepspeed
+duckduckgo_search

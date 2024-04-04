@@ -15,9 +15,8 @@ class DenseRetrieval:
             # allow_dangerous_deserialization=True,
             # distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
         )
-        self.retriever = vectordb.as_retriever(
-            search_type="similarity", search_kwargs={"score_threshold": 0.15, "k": 30}
-        )
+        search_kwargs = {"score_threshold": 0.15, "k": 30}
+        self.retriever = vectordb.as_retriever(search_type="similarity")
 
         reranker_args = {
             "model": "../../inputs/bce-reranker-base_v1",
