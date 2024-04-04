@@ -27,7 +27,7 @@ class DuckduckgoSearch(object):
     def search(self, query):
         try:
             with DDGS(timeout=20) as ddgs:
-                results = [r for r in ddgs.text(query, max_results=5)]         
+                results = [r for r in ddgs.text(query, max_results=5)]
 
             web_content = ""
             if results:

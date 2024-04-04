@@ -71,6 +71,16 @@ def prepare_law_index(doc_directory, persist_directory):
     vectordb.persist()
 
 
+def test_document_spliter():
+    loader = LawDirectoryLoader(doc_directory)
+    text_splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=250, chunk_overlap=20
+    )
+
+    docs = loader.load_and_split(text_splitter=text_splitter)
+    return
+
+
 def test_langchain_retrieval():
     def pretty_print_docs(docs):
         print(

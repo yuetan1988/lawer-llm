@@ -39,7 +39,7 @@ class InternLLM(LLM):
         return "InternLM"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     llm = InternLLM(model_name_or_path="../../models")
-    response = llm._call('你好')
+    response = llm._call("你好")
     print(response)

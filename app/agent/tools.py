@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class ToolInterface(BaseModel):
+class BaseTool(BaseModel):
     name: str
     description: str
 
