@@ -37,3 +37,9 @@ class InternLLM(LLM):
     @property
     def _llm_type(self) -> str:
         return "InternLM"
+
+
+if __name__ == '__main__':
+    llm = InternLLM(model_name_or_path="../../models")
+    response = llm._call('你好')
+    print(response)
