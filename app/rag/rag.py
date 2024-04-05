@@ -1,5 +1,6 @@
 import gradio as gr
 from langchain.chains import RetrievalQA
+from langchain.retrievers import EnsembleRetriever
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
@@ -41,6 +42,10 @@ def get_prompt():
         input_variables=["context", "question"], template=template
     )
     return QA_CHAIN_PROMPT
+
+
+def get_retrieval():
+    return
 
 
 def load_chain():

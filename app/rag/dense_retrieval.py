@@ -1,4 +1,5 @@
 from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_community.vectorstores import Chroma as Vectorstore
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
