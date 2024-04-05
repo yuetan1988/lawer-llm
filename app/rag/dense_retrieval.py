@@ -37,7 +37,7 @@ class DenseRetrieval:
         tracker: QueryTracker = None,
     ):
         docs = self.compression_retriever.get_relevant_documents(question)
-        pretty_print_docs(docs)
+        return docs
 
 
 class CacheRetrieval:
@@ -48,15 +48,10 @@ class CacheRetrieval:
         pass
 
 
-def pretty_print_docs(docs):
-    print(
-        f"\n{'-' * 100}\n".join(
-            [f"Document {i+1}:\n\n" + d.page_content for i, d in enumerate(docs)]
-        )
-    )
-
-
 if __name__ == "__main__":
+    from utils import pretty_print_docs
+
     persist_directory = "../../examples/database/chroma"
     dense_retrieval = DenseRetrieval(persist_directory)
-    dense_retrieval.query(question="我是来读宪法的，第一条就是?")
+    docs = dense_retrieval.query(question="我是来读宪法的，第一条就是?")
+    pretty_print_docs(docs)

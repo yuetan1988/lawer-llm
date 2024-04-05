@@ -9,3 +9,4 @@ gradio
 deepspeed
 duckduckgo_search
 open-retrievals
+rank_bm25

@@ -82,12 +82,7 @@ def test_document_spliter():
 
 
 def test_langchain_retrieval():
-    def pretty_print_docs(docs):
-        print(
-            f"\n{'-' * 100}\n".join(
-                [f"Document {i+1}:\n\n" + d.page_content for i, d in enumerate(docs)]
-            )
-        )
+    from utils import pretty_print_docs
 
     embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
 
