@@ -1,13 +1,10 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
 KEYWORD_PROMPT = (
     "从这句话中抽取5个和法律、条例、规定相关的关键字 "
     "### \n{instruction}\n"
     "只输出关键字即可, 不要说多余的话"
 )
 
-# 茴香豆参考
+
 TOPIC_PROMPT = "告诉我这句话的主题，直接说主题不要解释" "\n{instruction}\n"
 
 SCORING_QUESTION_PROMPT = (
@@ -22,30 +19,12 @@ SCORING_RELAVANCE_PROMPT = (
 SUMMARIZE_PROMPT = "{query} \n" "仔细阅读以上内容，输出其摘要，总结得简短有力"
 
 
-
-
-
-model_name_or_path = "../models"
-
-tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name_or_path,
-    trust_remote_code=True,
-    torch_dtype=torch.bfloat16,
-    device_map="auto",
+MULTI_QUERY_PROMPT = (
+    "从这个用户问题中生成3个不同版本，以从矢量数据库中检索相关文档。通过对用户问题生成多个视角，您的目标是帮助用户克服基于距离的相似性搜索的一些限制。提供这些用换行符分隔的替代问题，不要给出多余的回答。\n"
+    "问题：{query}"
 )
-model = model.eval()
 
 
-print("=============Welcome to InternLM chatbot, type 'exit' to exit.=============")
+HYPO_QUESTION_PROMPT = "生成5个假设问题的列表，以下文档可用于回答这些问题:\n\n{passage}"
 
-messages = []
-
-while True:
-    input_text = input("User  >>> ")
-    input_text = PROMPT.format_map({"instruction": input_text.replace(" ", "")})
-    if input_text == "exit":
-        break
-    response, history = model.chat(tokenizer, input_text, history=messages)
-    messages.append((input_text, response))
-    print(f"robot >>> {response}")
+LAW_PROMPT = "你是一个专业律师，请判断下面问题是否和法律相关，相关请回答YES，不想关请回答NO，不允许其它回答，不允许在答案中添加编造成分。"

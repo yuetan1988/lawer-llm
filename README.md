@@ -29,6 +29,7 @@
 
 
 ## How to use it
+
 ### 同步模型权重
 ```shell
 ln -s /root/share/new_models/Shanghai_AI_Laboratory/internlm2-chat-7b /root/lawer-llm/models
@@ -59,6 +60,9 @@ git clone https://github.com/liuhuanyong/CrimeKgAssitant
 python llm_finetune.py
 ```
 
+评测
+- https://github.com/open-compass/LawBench
+
 
 ## 资料
 
@@ -68,4 +72,4 @@ python llm_finetune.py
 - https://github.com/CSHaitao/Awesome-LegalAI-Resources
 - https://github.com/lvwzhen/law-cn-ai
 - https://github.com/LiuHC0428/LAW-GPT
-- 
+- https://github.com/zhihaiLLM/wisdomInterrogatory

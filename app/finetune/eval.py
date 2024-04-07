@@ -46,6 +46,9 @@ for filename in os.listdir(folder_path):
             results[str(i)] = curr
 
         model_name = model_name_or_path.split("/")[-1]
-        out_path = f"../../outputs/{model_name}/{filename}"
-        with open(out_path, "w") as json_file:
+        out_path = f"../../outputs/{model_name}"
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
+
+        with open(f"{out_path}/{filename}", "w") as json_file:
             json.dump(results, json_file, ensure_ascii=False, indent=4)
