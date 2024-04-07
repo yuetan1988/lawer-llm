@@ -22,9 +22,6 @@ SCORING_RELAVANCE_PROMPT = (
 SUMMARIZE_PROMPT = "{query} \n" "仔细阅读以上内容，输出其摘要，总结得简短有力"
 
 
-
-
-
 model_name_or_path = "../models"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)

@@ -34,6 +34,17 @@ class BM25Model:
         return res
 
 
+def key_words_match_knowledge(dic_all, choices, query):
+    result_title = process.extract(query, choices, limit=1)
+    match = re.search(r"第([一二三四五六七八九零百十]+)条", query)
+    if match:
+        result_num = match.group(1)
+        key0 = result_title[0][0] + " 第" + result_num + "条"
+        if key0 in dic_all.keys():
+            return (key0, dic_all[key0])
+    return
+
+
 if __name__ == "__main__":
     from utils import pretty_print_docs
 

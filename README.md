@@ -73,3 +73,4 @@ python llm_finetune.py
 - https://github.com/lvwzhen/law-cn-ai
 - https://github.com/LiuHC0428/LAW-GPT
 - https://github.com/zhihaiLLM/wisdomInterrogatory
+- https://github.com/billvsme/law_ai

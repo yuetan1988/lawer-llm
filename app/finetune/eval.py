@@ -15,7 +15,8 @@ tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=
 model = AutoModelForCausalLM.from_pretrained(
     model_name_or_path,
     trust_remote_code=True,
-    torch_dtype=torch.bfloat16,
+    load_in_8bit=True,
+    # torch_dtype=torch.bfloat16,
     device_map="auto",
 )
 model = model.eval()
@@ -31,6 +32,12 @@ for filename in os.listdir(folder_path):
         with open(file_path, "r") as file:
             data = json.load(file)
 
+        model_name = model_name_or_path.split("/")[-1]
+        out_path = f"../../outputs/{model_name}"
+        if os.path.exists(f"{out_path}/{filename}"):
+            print(f"SKIP {out_path}/{filename}")
+            continue
+
         print(f"start generate: {filename}")
         results = {}
         for i, item in tqdm(enumerate(data), total=len(data), desc="Processing"):
@@ -45,8 +52,6 @@ for filename in os.listdir(folder_path):
             curr = {"origin_prompt": input_text, "prediction": response, "refr": answer}
             results[str(i)] = curr
 
-        model_name = model_name_or_path.split("/")[-1]
-        out_path = f"../../outputs/{model_name}"
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 

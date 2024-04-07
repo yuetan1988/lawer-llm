@@ -17,6 +17,12 @@ from langchain_community.vectorstores import Chroma
 from llm import InternLLM
 
 
+class CFG:
+    llm_model_name_or_path = "../../models"
+    embed_model_name_or_path = "BAAI/bge-large-zh-v1.5"
+    vector_db_path = "../../examples/database/chroma"
+
+
 def upload_file(file):
     """用户上传"""
     if not os.path.exists("docs"):
@@ -49,15 +55,15 @@ def get_retrieval():
 
 
 def load_chain():
-    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-zh-v1.5")
+    embeddings = HuggingFaceEmbeddings(model_name=CFG.embed_model_name_or_path)
 
-    persist_directory = "../../examples/database/chroma"
+    persist_directory = CFG.vector_db_path
     vectordb = Chroma(
         persist_directory=persist_directory,  # 允许我们将persist_directory目录保存到磁盘上
         embedding_function=embeddings,
     )
 
-    llm = InternLLM(model_name_or_path="../../models")
+    llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
     QA_CHAIN_PROMPT = get_prompt()
 
     retriever = vectordb.as_retriever(search_type="mmr")
