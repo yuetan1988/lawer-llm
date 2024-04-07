@@ -1,4 +1,5 @@
 from langchain_community.retrievers import BM25Retriever
+from langchain.schema import Document
 import jieba
 from rank_bm25 import BM25Okapi
 from utils import QueryTracker
@@ -21,15 +22,14 @@ class SparseRetrieval:
         return docs
 
 
-
 class BM25Model:
     def __init__(self, data_list):
         tokenized_documents = [jieba.lcut(doc) for doc in data_list]
         self.bm25 = BM25Okapi(tokenized_documents)
         self.data_list = data_list
 
-    def query(self, query, k = 10):
-        query = jieba.lcut(query)  # 分词
+    def query(self, query, k=10):
+        query = jieba.lcut(query)  # document和query采用同样的分词
         res = self.bm25.get_top_n(query, self.data_list, n=k)
         return res
 

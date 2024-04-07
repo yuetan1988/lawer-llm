@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 # model_name_or_path = "../../outputs/result"
-model_name_or_path = "../../models"
+model_name_or_path = "../../models/internlm2-chat-7b"  # 原模型
 
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(
@@ -45,6 +45,7 @@ for filename in os.listdir(folder_path):
             curr = {"origin_prompt": input_text, "prediction": response, "refr": answer}
             results[str(i)] = curr
 
-        out_path = f"../../outputs/{filename}"
+        model_name = model_name_or_path.split("/")[-1]
+        out_path = f"../../outputs/{model_name}/{filename}"
         with open(out_path, "w") as json_file:
             json.dump(results, json_file, ensure_ascii=False, indent=4)
