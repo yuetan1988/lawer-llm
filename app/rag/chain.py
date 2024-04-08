@@ -38,7 +38,7 @@ def load_chain(CFG):
     )
 
     llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
-    QA_CHAIN_PROMPT = get_prompt(RAG_PROMPT)
+    QA_CHAIN_PROMPT = get_prompt_chain(RAG_PROMPT)
 
     retriever = vectordb.as_retriever(search_type="mmr")
 
