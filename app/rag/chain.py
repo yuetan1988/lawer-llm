@@ -14,17 +14,10 @@ from langchain_community.document_loaders import (
 )
 from langchain_community.vectorstores import Chroma
 from rag.llm import InternLLM
+from rag.prompt import RAG_PROMPT
 
 
-def get_prompt():
-    template = """请使用以下提供的上下文来回答用户的问题。如果无法从上下文中得到答案，请回答你不知道，并总是使用中文回答。
-    提供的上下文：
-    ···
-    {context}
-    ···
-    用户的问题: {question}
-    你给的回答:"""
-
+def get_prompt_chain(template):
     QA_CHAIN_PROMPT = PromptTemplate(
         input_variables=["context", "question"], template=template
     )
@@ -45,7 +38,7 @@ def load_chain(CFG):
     )
 
     llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
-    QA_CHAIN_PROMPT = get_prompt()
+    QA_CHAIN_PROMPT = get_prompt(RAG_PROMPT)
 
     retriever = vectordb.as_retriever(search_type="mmr")
 

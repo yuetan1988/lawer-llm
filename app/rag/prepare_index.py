@@ -1,5 +1,6 @@
 from typing import Any, Iterable, List
 
+import tiktoken
 from langchain.docstore.document import Document
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import (
