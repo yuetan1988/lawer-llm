@@ -36,3 +36,6 @@ RAG_PROMPT = """请使用以下提供的上下文来回答用户的问题。如�
     ···
     用户的问题: {question}
     你的回答:"""
+
+
+RETRIEVAL_PROMPT = "为这个句子生成表示以用于检索相关文章：{context}"

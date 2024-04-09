@@ -10,6 +10,9 @@ from langchain.text_splitter import (
 )
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import Chroma
+from langchain.schema import Document
+import spacy
+import PyPDF2
 
 
 class LawDirectoryLoader(DirectoryLoader):
