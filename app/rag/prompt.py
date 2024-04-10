@@ -1,3 +1,7 @@
+"""
+COT: Lets's think step by step
+"""
+
 KEYWORD_PROMPT = (
     "从这句话中抽取5个和法律、条例、规定相关的关键字 "
     "### \n{instruction}\n"

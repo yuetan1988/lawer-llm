@@ -1,3 +1,7 @@
+"""
+ReAct: 先思考再行动，行动结果返回后再思考下一步该做什么，不断重复
+"""
+
 from pydantic import BaseModel
 from llm import ChatLLM
 from tools import BaseTool
