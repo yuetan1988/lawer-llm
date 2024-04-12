@@ -6,6 +6,7 @@ https://github.com/InternLM/HuixiangDou
 import hashlib
 import io
 import logging
+import re
 
 import pandas as pd
 import requests
@@ -75,6 +76,7 @@ class FileParser:
         text = text.replace("\n\n\n", "\n")
         text = text.replace("\n\n", "\n")
         text = text.replace("  ", " ")
+        text = re.sub(r"\n\d{2,3}\s?", "\n", text)
         return text, None
 
     def get_type(self, filepath: str):
@@ -122,7 +124,7 @@ class FileParser:
 
     def read_pdf(self, filename):
         with open(filename, "rb") as file:
-            text = self.extract_text_from_pdf(file)
+            text = self.extract_text_from_pdf2(file)
         return text
 
     @staticmethod
@@ -173,5 +175,22 @@ class FileParser:
         text = ""
         reader = pypdf.PdfReader(file_stream)
         for page in reader.pages:
-            text += page.extract_text()
+            text += page.extract_text().strip()
         return text
+
+    @staticmethod
+    def extract_text_from_pdf2(file_stream):
+        import PyPDF2
+
+        text = ""
+        reader = PyPDF2.PdfReader(file_stream)
+        for page in reader.pages:
+            text += page.extract_text().strip()
+        return text
+
+
+if __name__ == "__main__":
+    file_io = FileParser()
+    text, msg = file_io.read("/root/lawer-llm/RAG-competition/初赛训练数据集.pdf")
+
+    print(text)
