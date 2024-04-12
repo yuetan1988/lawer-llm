@@ -28,7 +28,7 @@ def get_retrieval():
     return
 
 
-def load_chain(CFG):
+def get_vector_db(CFG):
     embeddings = HuggingFaceEmbeddings(model_name=CFG.embed_model_name_or_path)
 
     persist_directory = CFG.vector_db_path
@@ -36,11 +36,16 @@ def load_chain(CFG):
         persist_directory=persist_directory,  # 允许我们将persist_directory目录保存到磁盘上
         embedding_function=embeddings,
     )
+    return vector_db
+
+
+def load_chain(CFG):
+    vector_db = get_vector_db(CFG)
+    retriever = vectordb.as_retriever(search_type="mmr")
 
     llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
-    QA_CHAIN_PROMPT = get_prompt_chain(RAG_PROMPT)
 
-    retriever = vectordb.as_retriever(search_type="mmr")
+    QA_CHAIN_PROMPT = get_prompt_chain(RAG_PROMPT)
 
     qa_chain = RetrievalQA.from_chain_type(
         llm,
@@ -83,3 +88,21 @@ class ModelCenter:
             return "", chat_history, reference
         except Exception as e:
             return e, chat_history, reference
+
+
+class KnowledgeCenter:
+    """
+    本地知识
+    """
+
+    def __init__(self, CFG):
+        self.parser = FileParser()
+        self.vector_db = get_vector_db(CFG)
+
+    def init_vector_db(self, filepath: str):
+        pass
+
+    def add_document(self, filepath: str):
+        doc = self.parser(file_path)
+        self.vector_db.add_documents(doc)
+        self.vector_db.save_local()

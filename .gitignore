@@ -13,5 +13,7 @@ examples/output/results/*
 temp/*
 /open-retrievals
 /WSDM-Cup-2024
-/RAG-competition
+/RAG-competition/*
 huixiangdou
+/homework/*
+/kdd24-aqa/*

@@ -1,6 +1,6 @@
 import os
 import gradio as gr
-from rag.chain import ModelCenter
+from rag.chain import ModelCenter, KnowledgeCenter
 
 
 class CFG:
@@ -9,7 +9,7 @@ class CFG:
     vector_db_path = "../examples/database/chroma"
 
 
-def upload_file(file):
+def upload_file(file, knowledge_center):
     """用户上传"""
     if not os.path.exists("docs"):
         os.mkdir("docs")
@@ -17,7 +17,7 @@ def upload_file(file):
     shutil.move(file.name, "docs/" + filename)
     # file_list首位插入新上传的文件
     file_list.insert(0, filename)
-    application.source_service.add_document("docs/" + filename)
+    knowledge_center.add_document("docs/" + filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
 
 
@@ -27,6 +27,7 @@ def clear_session():
 
 def main():
     model_center = ModelCenter(CFG)
+    knowledge_center = KnowledgeCenter(CFG)
 
     block = gr.Blocks()
     with block as demo:
@@ -73,7 +74,7 @@ def main():
                     search = gr.Textbox(label="引用文献", max_lines=10)
 
             # 设置按钮的点击事件。当点击时，调用上面定义的 qa_chain_self_answer 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
-            file.upload(upload_file, inputs=file, outputs=None)
+            file.upload(upload_file, inputs=[file, knowledge_center], outputs=None)
 
             # 点击chat按钮
             db_wo_his_btn.click(
