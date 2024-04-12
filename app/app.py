@@ -1,4 +1,5 @@
 import os
+from functools import partial
 import gradio as gr
 from rag.chain import ModelCenter, KnowledgeCenter
 
@@ -74,7 +75,11 @@ def main():
                     search = gr.Textbox(label="引用文献", max_lines=10)
 
             # 设置按钮的点击事件。当点击时，调用上面定义的 qa_chain_self_answer 函数，并传入用户的消息和聊天历史记录，然后更新文本框和聊天机器人组件。
-            file.upload(upload_file, inputs=[file, knowledge_center], outputs=None)
+            file.upload(
+                partial(upload_file, knowledge_center=knowledge_center),
+                inputs=[file],
+                outputs=None,
+            )
 
             # 点击chat按钮
             db_wo_his_btn.click(
