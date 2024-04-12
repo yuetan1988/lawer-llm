@@ -15,6 +15,7 @@ from langchain_community.document_loaders import (
 from langchain_community.vectorstores import Chroma
 from rag.llm import InternLLM
 from rag.prompt import RAG_PROMPT
+from rag.parse_file import FileParser
 
 
 def get_prompt_chain(template):
@@ -32,7 +33,7 @@ def get_vector_db(CFG):
     embeddings = HuggingFaceEmbeddings(model_name=CFG.embed_model_name_or_path)
 
     persist_directory = CFG.vector_db_path
-    vectordb = Chroma(
+    vector_db = Chroma(
         persist_directory=persist_directory,  # 允许我们将persist_directory目录保存到磁盘上
         embedding_function=embeddings,
     )
@@ -41,7 +42,7 @@ def get_vector_db(CFG):
 
 def load_chain(CFG):
     vector_db = get_vector_db(CFG)
-    retriever = vectordb.as_retriever(search_type="mmr")
+    retriever = vector_db.as_retriever(search_type="mmr")
 
     llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
 
