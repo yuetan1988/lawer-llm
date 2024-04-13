@@ -10,9 +10,63 @@ from langchain.text_splitter import (
 )
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores.faiss import FAISS as Vectorstore
 from langchain.schema import Document
 import spacy
 import PyPDF2
+
+logger = logging.getLogger(__name__)
+
+
+class KnowledgeStore(object):
+    def __init__(
+        self,
+        text_splitter,
+    ):
+        pass
+
+    def ingress_response(self, files: list, work_dir: str) -> None:
+        """Extract the features required for the response pipeline based on the document."""
+        feature_dir = os.path.join(work_dir, "db_response")
+        if not os.path.exists(feature_dir):
+            os.makedirs(feature_dir)
+
+        logger.info("glob {} in dir {}".format(files, file_dir))
+        file_parser = FileParser()
+        documents = []
+
+        for i, file in enumerate(files):
+            logger.debug("{}/{}.. {}".format(i + 1, len(files), file.basename))
+            if not file.state:
+                continue
+
+            if file._type == "md":
+                md_documents, md_length = self.get_md_documents(file)
+                documents += md_documents
+                logger.info("{} content length {}".format(file._type, md_length))
+                file.reason = str(md_length)
+
+            else:
+                # read pdf/word/excel/ppt text
+                text, error = file_parser.read(file.copypath)
+                if error is not None:
+                    file.state = False
+                    file.reason = str(error)
+                    continue
+                file.reason = str(len(text))
+                logger.info("{} content length {}".format(file._type, len(text)))
+                text = file.prefix + text
+                documents += self.get_text_documents(text, file)
+
+        if len(documents) < 1:
+            return
+        vs = Vectorstore.from_documents(documents, self.embeddings)
+        vs.save_local(feature_dir)
+        return
+
+    def ingress_reject(self, files: list, work_dir: str):
+        """Extract the features required for the reject pipeline based on documents."""
+        return
 
 
 class LawDirectoryLoader(DirectoryLoader):
