@@ -170,6 +170,11 @@ class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
         ]
 
 
+class CustomMarkdownTextSplitter(object):
+    def __init__(self):
+        pass
+
+
 def prepare_law_index(doc_directory, persist_directory):
     loader = LawDirectoryLoader(doc_directory)
     text_splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(

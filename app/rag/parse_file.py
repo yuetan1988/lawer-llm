@@ -45,7 +45,7 @@ class FileParser:
         text = ""
 
         try:
-            if file_type == "md" or file_type == "text":
+            if file_type == "text" or file_type == "md":
                 with open(filepath) as f:
                     text = f.read()
 
