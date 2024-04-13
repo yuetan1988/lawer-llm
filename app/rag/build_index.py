@@ -25,12 +25,20 @@ class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
     # https://github.com/chatchat-space/Langchain-Chatchat/blob/master/text_splitter/chinese_recursive_text_splitter.py
     def __init__(
         self,
-        separators: Optional[List[str]] = None,
+        separators: Optional[List[str]] = [r"第\S*条 "],
         keep_separator: bool = True,
         is_separator_regex: bool = True,
         **kwargs
     ):
-        separators = [r"第\S*条 "]
+        if not separators:
+            separators = [
+                "\n\n",
+                "\n",
+                "。|！|？",
+                "\.\s|\!\s|\?\s",
+                "；|;\s",
+                "，|,\s",
+            ]
 
         headers_to_split_on = [
             ("#", "header1"),

@@ -176,6 +176,20 @@ class FileParser:
         reader = pypdf.PdfReader(file_stream)
         for page in reader.pages:
             text += page.extract_text().strip()
+            tables = page.find_tables()
+            for table in tables:
+                tablename = "_".join(
+                    filter(
+                        lambda x: x is not None and "Col" not in x, table.header.names
+                    )
+                )
+                pan = table.to_pandas()
+                json_text = pan.dropna(axis=1).to_json(force_ascii=False)
+                text += tablename
+                text += "\n"
+                text += json_text
+                text += "\n"
+
         return text
 
     @staticmethod

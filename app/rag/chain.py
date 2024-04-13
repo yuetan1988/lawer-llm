@@ -106,4 +106,4 @@ class KnowledgeCenter:
     def add_document(self, filepath: str):
         doc = self.parser(file_path)
         self.vector_db.add_documents(doc)
-        self.vector_db.save_local()
+        self.vector_db.save_local(CFG.vector_db_path)
