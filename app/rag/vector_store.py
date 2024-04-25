@@ -11,6 +11,7 @@ from langchain.text_splitter import (
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import Chroma
 from langchain_community.vectorstores.faiss import FAISS as Vectorstore
+from langchain_commnunity.vectorstores import Qdrant
 from langchain.schema import Document
 import spacy
 import PyPDF2
