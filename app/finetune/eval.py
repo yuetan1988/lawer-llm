@@ -8,33 +8,39 @@ from rouge import Rouge
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-# model_name_or_path = "../../outputs/result"
-model_name_or_path = "../../models/internlm2-chat-7b"  # 原模型
+class CFG:
+    base_dir = ""
+    folder_path = base_dir + "../../inputs/LawBench/data/zero_shot/"
+    output_path = base_dir + ""
+    # model_name_or_path = "../../outputs/result"
+    model_name_or_path = "../../models/internlm2-chat-7b"  # 原模型
 
-tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+
+if not os.path.exists(CFG.output_path):
+    os.makedirs(CFG.output_path)
+
+
+tokenizer = AutoTokenizer.from_pretrained(
+    CFG.model_name_or_path, trust_remote_code=True
+)
 model = AutoModelForCausalLM.from_pretrained(
-    model_name_or_path,
+    CFG.model_name_or_path,
     trust_remote_code=True,
-    load_in_8bit=True,
-    # torch_dtype=torch.bfloat16,
+    # load_in_8bit=True,
+    torch_dtype=torch.bfloat16,
     device_map="auto",
 )
 model = model.eval()
 
 
-folder_path = "../../inputs/LawBench/data/zero_shot/"
-
-
-for filename in os.listdir(folder_path):
+for filename in os.listdir(CFG.folder_path):
     file_path = os.path.join(folder_path, filename)
 
     if os.path.isfile(file_path):
         with open(file_path, "r") as file:
             data = json.load(file)
 
-        model_name = model_name_or_path.split("/")[-1]
-        out_path = f"../../outputs/{model_name}"
-        if os.path.exists(f"{out_path}/{filename}"):
+        if os.path.exists(f"{CFG.output_path}/{filename}"):
             print(f"SKIP {out_path}/{filename}")
             continue
 
@@ -52,8 +58,5 @@ for filename in os.listdir(folder_path):
             curr = {"origin_prompt": input_text, "prediction": response, "refr": answer}
             results[str(i)] = curr
 
-        if not os.path.exists(out_path):
-            os.makedirs(out_path)
-
-        with open(f"{out_path}/{filename}", "w") as json_file:
+        with open(f"{CFG.output_path}/{filename}", "w") as json_file:
             json.dump(results, json_file, ensure_ascii=False, indent=4)
