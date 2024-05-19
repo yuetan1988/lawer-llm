@@ -1,7 +1,9 @@
+datasets
+transformers
+tokenizers
 langchain
 langchain-community
 tiktoken
-vllm
 modelscope
 sentence-transformers
 chromadb
