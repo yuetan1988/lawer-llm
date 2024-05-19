@@ -23,13 +23,13 @@ IGNORE_INDEX = -100
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: Optional[str] = field(default="../../models/")
+    model_name_or_path: Optional[str] = field(default=None)
 
 
 @dataclass
 class DataArguments:
     data_path: str = field(
-        default="../../inputs/train_data.json",
+        default=None,
         metadata={"help": "Path to the training data."},
     )
     source_length: int = field(default=512)
@@ -38,7 +38,7 @@ class DataArguments:
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
-    output_dir: Optional[str] = field(default="../../outputs/result")
+    output_dir: Optional[str] = field(default=None)
     cache_dir: Optional[str] = field(default=None)
     per_device_train_batch_size: int = field(default=1)
     gradient_accumulation_steps: int = field(default=4)

@@ -17,7 +17,8 @@ cd app/finetune
 python datasets/prepare_model_scope_data.py
 ```
 
-## 2. 扩充词表[可选]
+## 2. 数据处理
+扩充词表[可选]
 
 
 ## 3. 微调
@@ -26,3 +27,4 @@ LORA微调
 ```shell
 
 ```
+
