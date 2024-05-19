@@ -1,4 +1,4 @@
-deepspeed --include localhost:0,1 train.py \
+deepspeed --include localhost:25641 train.py \
     --deepspeed conf/ds_zero2_no_offload.json \
     --model_name_or_path /root/share/model_repos/internlm2-base-7b \
     --data_path /root/lawer-llm/inputs \

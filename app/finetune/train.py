@@ -167,7 +167,7 @@ def build_model(
         model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            device_map="auto",
+            # device_map="auto",
             # torch_dtype='auto',
             load_in_8bit=True,
             # if model_args.model_name_or_path.find("falcon") != -1 else False
@@ -338,5 +338,5 @@ def infer():
 
 
 if __name__ == "__main__":
-    # train()
-    infer()
+    train()
+    # infer()
