@@ -1,7 +1,10 @@
-deepspeed --include localhost:25641 train.py \
+CUDA_VISIBLE_DEVICES=0,1
+MASTER_PORT=25641
+
+deepspeed --include localhost:$CUDA_VISIBLE_DEVICES --master_port $MASTER_PORT train.py \
     --deepspeed conf/ds_zero2_no_offload.json \
+    --do_train \
     --model_name_or_path /root/share/model_repos/internlm2-base-7b \
-    --data_path /root/lawer-llm/inputs \
     --output_dir /root/lawer-llm/outputs \
     --use_lora true \
     # --use_deepspeed true \

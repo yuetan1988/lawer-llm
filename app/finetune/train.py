@@ -29,7 +29,7 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     data_path: str = field(
-        default=None,
+        default="/root/lawer-llm/inputs/train_data.json",
         metadata={"help": "Path to the training data."},
     )
     source_length: int = field(default=512)
