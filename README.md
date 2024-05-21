@@ -2,6 +2,8 @@
 
 书生·浦语 (InternLM) 开源大模型实践项目: LLM律师助手
 
+[WIKI文档](https://github.com/yuetan1988/lawer-llm/wiki)
+
 
 ## 项目目标
 
