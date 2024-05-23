@@ -1,6 +1,10 @@
-# 罪恶克星大模型
+<h1 align="center">
+<img src="./docs/assets/logo.svg" width="490" align=center/>
+</h1><br>
 
-书生·浦语 (InternLM) 开源大模型实践项目: LLM律师助手
+
+> [书生·浦语 InternLM](https://github.com/InternLM) 开源大模型实践项目: 罪恶克星-法律大模型
+
 
 [WIKI文档](https://github.com/yuetan1988/lawer-llm/wiki)
 
@@ -9,14 +13,17 @@
 
 **Vision**: 大语言模型助力全面依法治国
 
-**Objective**: 
-- 短期目标: 根据已有资料，回答法律相关问题
-    - 已有法律条文的基础上，输入相关问题可以进行法律咨询.
-    - 输入相关文件，可以根据法律条文给出评价. 即自己输入法律条文
-- 长期目标: 能够根据上传资料，结合法律条文，给出缺失项与违法项
+**Feature**: 
+- 自由回答法律问题
+- 根据上传资源，回答法律问题
+- 上网搜索，挥发法律问题
+- 根据上传资源，提供一定审计功能
 
 
 ## 技术路线
+
+![archicheture](./docs/assets/)
+
 
 - continue pretrain
     - mixed data, hybrid-tuning
