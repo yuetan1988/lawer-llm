@@ -1,15 +1,14 @@
 <h1 align="center">
-<img src="./docs/assets/logo.svg" width="490" align=center/>
+<img src="./docs/assets/logo.svg" width="590" align=center/>
 </h1><br>
 
 
-> [书生·浦语 InternLM](https://github.com/InternLM) 开源大模型实践项目: 罪恶克星-法律大模型
-
-
-[WIKI文档](https://github.com/yuetan1988/lawer-llm/wiki)
+[书生·浦语 InternLM](https://github.com/InternLM) 开源大模型实践项目: 罪恶克星-法律大模型
 
 
 ## 项目目标
+
+[WIKI文档](https://github.com/yuetan1988/lawer-llm/wiki)
 
 **Vision**: 大语言模型助力全面依法治国
 
