@@ -36,6 +36,9 @@ sh run.sh
 
 使用[opencompass](https://github.com/open-compass/opencompass)进行评测
 
+- https://github.com/open-compass/LawBench
+
+
 ```shell
 # 安装opencompass
 git clone https://github.com/open-compass/opencompass opencompass

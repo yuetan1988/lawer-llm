@@ -155,24 +155,13 @@ def build_model(
     model_args: ModelArguments,
     training_args: TrainingArguments,
 ) -> tuple:
-    if training_args.use_deepspeed:
-        model = AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
             torch_dtype="auto",
             # if model_args.model_name_or_path.find("falcon") != -1 else False
             trust_remote_code=True,
-        )
-    else:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            # device_map="auto",
-            # torch_dtype='auto',
-            load_in_8bit=True,
-            # if model_args.model_name_or_path.find("falcon") != -1 else False
-            trust_remote_code=True,
-        )
+        )   
 
     if training_args.use_lora:
         from peft import LoraConfig, get_peft_model
