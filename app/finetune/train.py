@@ -43,7 +43,7 @@ class TrainingArguments(transformers.TrainingArguments):
     num_train_epochs = (1,)
     per_device_train_batch_size: int = field(default=1)
     gradient_accumulation_steps: int = field(default=4)
-    optim: str = field(default="paged_adamw_32bit")  #   # "adamw_torch"
+    optim: str = field(default="paged_adamw_32bit")  # "adamw_torch"
     model_max_length: int = field(
         default=512,
         metadata={
