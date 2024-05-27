@@ -40,6 +40,7 @@ class DataArguments:
 class TrainingArguments(transformers.TrainingArguments):
     output_dir: Optional[str] = field(default=None)
     cache_dir: Optional[str] = field(default=None)
+    num_train_epochs = (1,)
     per_device_train_batch_size: int = field(default=1)
     gradient_accumulation_steps: int = field(default=4)
     optim: str = field(default="paged_adamw_32bit")  #   # "adamw_torch"
@@ -156,12 +157,12 @@ def build_model(
     training_args: TrainingArguments,
 ) -> tuple:
     model = AutoModelForCausalLM.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            torch_dtype="auto",
-            # if model_args.model_name_or_path.find("falcon") != -1 else False
-            trust_remote_code=True,
-        )   
+        model_args.model_name_or_path,
+        cache_dir=training_args.cache_dir,
+        torch_dtype="auto",
+        # if model_args.model_name_or_path.find("falcon") != -1 else False
+        trust_remote_code=True,
+    )
 
     if training_args.use_lora:
         from peft import LoraConfig, get_peft_model
@@ -192,6 +193,7 @@ def train():
         (ModelArguments, DataArguments, TrainingArguments)
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    print(training_args)
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
