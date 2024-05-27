@@ -8,7 +8,7 @@
 
 ## 项目目标
 
-[WIKI文档](https://github.com/yuetan1988/lawer-llm/wiki)
+[详细文档](https://github.com/yuetan1988/lawer-llm/wiki)
 
 **Vision**: 大语言模型助力全面依法治国
 
@@ -70,8 +70,3 @@ python llm_finetune.py
 
 评测
 - 
-
-
-## 资料
-
-

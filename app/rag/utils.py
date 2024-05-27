@@ -1,3 +1,13 @@
+"""
+统一管理
+- 错误记录
+- Prompt
+- 超参数
+"""
+
+from enum import Enum
+
+
 class QueryTracker:
     """A class to track queries and log them into a file.
 
@@ -44,3 +54,8 @@ def pretty_print_docs(docs):
             [f"Document {i+1}:\n\n" + d.page_content for i, d in enumerate(docs)]
         )
     )
+
+
+class ErrorCode(Enum):
+    SUCCESS = 0, "success"
+    NOT_A_LAW_QUESTION = 1, "query is not a law related topic"
