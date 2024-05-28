@@ -38,35 +38,42 @@
 
 ## How to use it
 
-### 同步模型权重
-```shell
-ln -s /root/share/new_models/Shanghai_AI_Laboratory/internlm2-chat-7b /root/lawer-llm/models
-
-# cp -r /root/share/temp/model_repos/internlm-chat-7b /root/lawer-llm/models
-```
-
 ### 激活环境
 ```shell
-conda activate xtuner0.1.9
+conda activate xtuner
+pip install -r requirements.txt
 ```
 
+### SFT
+
+**Performance**
+
+| Model | Size | LawBench<sup>0shotval</sup> | LawBench<sup>1shotval</sup> | weights |
+
+| :-- | :-: | :-: | :-: | :-: | 
+
+| internlm2-chat-7b-sft | 7B |  |  | [官方weights](https://huggingface.co/internlm/internlm2-chat-7b-sft) |
+
+| internlm2-chat-7b | 7B |  |  |  |
+
+| internlm2-chat-7b-4bits | 7B |  |  |  |
+
+| internlm2-chat-20b-sft | 20B |  |  |  |
+
+| internlm2-chat-20b | 20B |  |  |  |
+
+| Meta-Llama-3-8B-Instruct | 20B |  |  |  |
+
+
+### RAG
+
+
+
+
+
 ### web-demo
+
 ```shell
 # 端口查看开发机ssh连接的端口
 streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
 ```
-
-### sft
-
-数据
-```shell
-git clone https://huggingface.co/datasets/ShengbinYue/DISC-Law-SFT
-git clone https://github.com/liuhuanyong/CrimeKgAssitant
-```
-
-```shell
-python llm_finetune.py
-```
-
-评测
-- 

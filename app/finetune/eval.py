@@ -9,11 +9,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class CFG:
-    base_dir = ""
-    folder_path = base_dir + "../../inputs/LawBench/data/zero_shot/"
-    output_path = base_dir + ""
-    # model_name_or_path = "../../outputs/result"
-    model_name_or_path = "../../models/internlm2-chat-7b"  # 原模型
+    base_dir = "/root/lawer-llm/"
+    folder_path = base_dir + "inputs/LawBench/data/zero_shot/"
+    output_path = base_dir + "outputs/finetune-eval/internlm2-chat-7b-sft"
+    # model_name_or_path = output_path + "checkpoint-4000"  # 微调模型
+    model_name_or_path = "/root/share/model_repos/internlm2-chat-7b-sft"  # 原模型
 
 
 if not os.path.exists(CFG.output_path):
@@ -26,7 +26,6 @@ tokenizer = AutoTokenizer.from_pretrained(
 model = AutoModelForCausalLM.from_pretrained(
     CFG.model_name_or_path,
     trust_remote_code=True,
-    # load_in_8bit=True,
     torch_dtype=torch.bfloat16,
     device_map="auto",
 )
@@ -34,7 +33,7 @@ model = model.eval()
 
 
 for filename in os.listdir(CFG.folder_path):
-    file_path = os.path.join(folder_path, filename)
+    file_path = os.path.join(CFG.folder_path, filename)
 
     if os.path.isfile(file_path):
         with open(file_path, "r") as file:
@@ -44,12 +43,23 @@ for filename in os.listdir(CFG.folder_path):
             print(f"SKIP {out_path}/{filename}")
             continue
 
-        print(f"start generate: {filename}")
+        # print(f"start generate: {filename}")
         results = {}
         for i, item in tqdm(enumerate(data), total=len(data), desc="Processing"):
             input_text = (
                 f"<|User|>:{item['instruction']}\n{item['question']}<eoh>\n<|Bot|>:"
             )
+
+            # generation_args = {
+            #     "max_new_tokens": 500,
+            #     "temperature": 0.0,
+            #     "do_sample": False,
+            # }
+            # generate_ids = model.generate(inputs, eos_token_id=processor.tokenizer.eos_token_id, **generation_args)
+
+            # # remove input tokens
+            # generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
+            # response = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
 
             response, _ = model.chat(tokenizer, input_text)
 

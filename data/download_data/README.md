@@ -14,3 +14,8 @@
 
 
 # RAG知识库
+
+
+## 检索生成数据
+
+- Improving Text Embeddings with Large Language Models

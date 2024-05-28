@@ -26,7 +26,7 @@ python datasets/prepare_model_scope_data.py
 
 ## 3. 微调
 
-LORA微调
+全量微调
 ```shell
 cd app/finetune
 sh run.sh
@@ -34,9 +34,23 @@ sh run.sh
 
 ## 4. 评测
 
-使用[opencompass](https://github.com/open-compass/opencompass)进行评测
-
 - https://github.com/open-compass/LawBench
+```shell
+# 评测数据准备
+cd inputs
+git clone https://github.com/open-compass/LawBench.git
+
+# 评测结果准备
+cd app/finetune
+python eval.py
+
+# 分数计算
+cd inputs/LawBench/evaluation
+python main.py --input_folder /root/lawer-llm/outputs/finetune-eval  --outfile /root/lawer-llm/outputs/finetune-eval-res
+```
+
+
+- 使用[opencompass](https://github.com/open-compass/opencompass)进行评测
 
 
 ```shell
