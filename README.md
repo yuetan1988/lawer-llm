@@ -49,20 +49,13 @@ pip install -r requirements.txt
 **Performance**
 
 | Model | Size | LawBench<sup>0shotval</sup> | LawBench<sup>1shotval</sup> | weights |
-
 | :-- | :-: | :-: | :-: | :-: | 
-
 | internlm2-chat-7b-sft | 7B |  |  | [官方weights](https://huggingface.co/internlm/internlm2-chat-7b-sft) |
-
 | internlm2-chat-7b | 7B |  |  |  |
-
 | internlm2-chat-7b-4bits | 7B |  |  |  |
-
 | internlm2-chat-20b-sft | 20B |  |  |  |
-
 | internlm2-chat-20b | 20B |  |  |  |
-
-| Meta-Llama-3-8B-Instruct | 20B |  |  |  |
+| Meta-Llama-3-8B-Instruct | 8B |  |  |  |
 
 
 ### RAG
