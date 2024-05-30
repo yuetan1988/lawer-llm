@@ -17,7 +17,7 @@ def batch_generate(
     text_input: List[str],
     model,
     tokenizer,
-    use_train_model: bool = True,
+    use_sft_adapter: bool = True,
     temp: float = 0.7,
 ):
     text_input_format = [
@@ -30,8 +30,7 @@ def batch_generate(
     batch_inputs["input_ids"] = batch_inputs["input_ids"].cuda()
     batch_inputs["attention_mask"] = batch_inputs["attention_mask"].cuda()
 
-    if use_train_model:
-        # with model.disable_adapter():
+    if use_sft_adapter:
         outputs = model.generate(
             **batch_inputs,
             max_new_tokens=256,
@@ -77,7 +76,7 @@ def infer(use_peft: bool = True, save_peft_merge: bool = False):
     model.eval()
 
     test_input = ["张三怒杀阎婆惜, 该当何罪"]
-    outputs = batch_generate(test_input, model, tokenizer)
+    outputs = batch_generate(test_input, model, tokenizer, use_sft_adapter=False)
     print(outputs)
 
     if save_peft_merge:
