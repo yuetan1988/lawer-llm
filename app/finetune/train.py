@@ -246,7 +246,7 @@ def train():
     trainer.save_model(output_dir=training_args.output_dir)
 
 
-def lora_save():
+def save_merge_lora():
     base_model = AutoModelForCausalLM.from_pretrained(
         model_name,
         return_dict=True,
@@ -263,87 +263,5 @@ def lora_save():
     tokenizer.save_pretrained(new_model)
 
 
-def batch_generate(
-    text_input: List[str],
-    model,
-    tokenizer,
-    use_train_model: bool = True,
-    temp: float = 0.7,
-):
-    text_input_format = [
-        PROMPT.format_map({"instruction": input}) for input in text_input
-    ]
-
-    batch_inputs = tokenizer.batch_encode_plus(
-        text_input_format, padding="longest", return_tensors="pt"
-    )
-    batch_inputs["input_ids"] = batch_inputs["input_ids"].cuda()
-    batch_inputs["attention_mask"] = batch_inputs["attention_mask"].cuda()
-
-    if use_train_model:
-        # with model.disable_adapter():
-        outputs = model.generate(
-            **batch_inputs,
-            max_new_tokens=256,
-            do_sample=True,
-            temperature=temp,
-            top_p=0.8,
-        )
-    else:
-        with model.disable_adapter():
-            outputs = model.generate(
-                **batch_inputs,
-                max_new_tokens=256,
-                do_sample=True,
-                temperature=temp,
-                top_p=0.8,
-            )
-    outputs = tokenizer.batch_decode(
-        outputs.cpu()[:, batch_inputs["input_ids"].shape[-1] :],
-        skip_special_tokens=True,
-    )
-
-    return outputs
-
-
-def infer():
-    base_model_name_or_path = "/root/share/model_repos/internlm2-chat-7b"
-    lora_model_name_or_path = "/root/lawer-llm/outputs/checkpoint-5000"
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model_name_or_path,
-        torch_dtype="auto",
-        device_map="auto",
-        trust_remote_code=True,
-    )
-
-    from peft import AutoPeftModelForCausalLM, PeftModel
-
-    model = PeftModel.from_pretrained(model, model_id=lora_model_name_or_path)
-    model.eval()
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        base_model_name_or_path, trust_remote_code=True, padding_side="left"
-    )
-
-    test_input = ["张三怒杀阎婆惜, 该当何罪"]
-    outputs = batch_generate(test_input, model, tokenizer)
-    print(outputs)
-
-    # model = AutoPeftModelForCausalLM.from_pretrained(
-    #     args.output_dir,
-    #     torch_dtype=torch.float16,
-    #     low_cpu_mem_usage=True,
-    # )
-    merged_model = model.merge_and_unload()
-    merged_model.save_pretrained(
-        "/root/lawer-llm/outputs/internlm-sft-7b-lora",
-        safe_serialization=True,
-        max_shard_size="2GB",
-    )
-    return
-
-
 if __name__ == "__main__":
-    # train()
-    infer()
+    train()
