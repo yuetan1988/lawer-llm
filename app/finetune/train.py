@@ -163,13 +163,25 @@ def build_model(
         # if model_args.model_name_or_path.find("falcon") != -1 else False
         trust_remote_code=True,
     )
+    # print(model)
 
     if training_args.use_lora:
         from peft import LoraConfig, get_peft_model
 
-        lora_alpha = 32
+        lora_alpha = 128
         LORA_DROPOUT = 0.05
-        TARGET_MODULES = ["o_proj", "gate_proj", "down_proj", "up_proj"]
+        TARGET_MODULES = [
+            "wqkv",
+            "wo",
+            "gate_up_proj",
+            "w2",
+        ]
+        # TARGET_MODULES = [
+        #     "q_proj",
+        #     "k_proj",
+        #     "v_proj",
+        #     "o_proj",
+        # ]
 
         config = LoraConfig(
             lora_alpha=lora_alpha,

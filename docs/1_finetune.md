@@ -42,11 +42,13 @@ git clone https://github.com/open-compass/LawBench.git
 
 # 评测结果准备
 cd app/finetune
-python eval.py
+python eval.py  # 结果保存在: /root/lawer-llm/outputs/finetune-eval/internlm2-chat-7b-sft
 
 # 分数计算
+pip install OpenCC
+
 cd inputs/LawBench/evaluation
-python main.py --input_folder /root/lawer-llm/outputs/finetune-eval  --outfile /root/lawer-llm/outputs/finetune-eval-res
+python main.py --input_folder /root/lawer-llm/outputs/finetune-eval/ --outfile /root/lawer-llm/outputs/finetune-eval-res-internlm2-chat-7b-sft.csv
 ```
 
 
