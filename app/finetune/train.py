@@ -307,15 +307,15 @@ def batch_generate(
 
 
 def infer():
-    base_model_name_or_path = "../../models/"
-    lora_model_name_or_path = "../../outputs/result/checkpoint-100"
+    base_model_name_or_path = "/root/share/model_repos/internlm2-chat-7b"
+    lora_model_name_or_path = "/root/lawer-llm/outputs/checkpoint-5000"
 
     model = AutoModelForCausalLM.from_pretrained(
         base_model_name_or_path,
         torch_dtype="auto",
-        # device_map="auto",
+        device_map="auto",
         trust_remote_code=True,
-    ).cuda(0)
+    )
 
     from peft import AutoPeftModelForCausalLM, PeftModel
 
@@ -335,11 +335,15 @@ def infer():
     #     torch_dtype=torch.float16,
     #     low_cpu_mem_usage=True,
     # )
-    # merged_model = model.merge_and_unload()
-    # merged_model.save_pretrained(args.output_dir,safe_serialization=True, max_shard_size="2GB")
+    merged_model = model.merge_and_unload()
+    merged_model.save_pretrained(
+        "/root/lawer-llm/outputs/internlm-sft-7b-lora",
+        safe_serialization=True,
+        max_shard_size="2GB",
+    )
     return
 
 
 if __name__ == "__main__":
-    train()
-    # infer()
+    # train()
+    infer()
