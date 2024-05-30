@@ -15,6 +15,8 @@ class CFG:
     # model_name_or_path = output_path + "checkpoint-4000"  # 微调模型
     model_name_or_path = "/root/share/model_repos/internlm2-chat-7b-sft"  # 原模型
 
+    batch_size = 8
+
 
 if not os.path.exists(CFG.output_path):
     os.makedirs(CFG.output_path)
@@ -32,6 +34,10 @@ model = AutoModelForCausalLM.from_pretrained(
 model = model.eval()
 
 
+def generate_input(item):
+    return f"<|User|>:{item['instruction']}\n{item['question']}<eoh>\n<|Bot|>:"
+
+
 for filename in os.listdir(CFG.folder_path):
     file_path = os.path.join(CFG.folder_path, filename)
 
@@ -45,23 +51,36 @@ for filename in os.listdir(CFG.folder_path):
 
         # print(f"start generate: {filename}")
         results = {}
-        for i, item in tqdm(enumerate(data), total=len(data), desc="Processing"):
-            input_text = (
-                f"<|User|>:{item['instruction']}\n{item['question']}<eoh>\n<|Bot|>:"
+        for i in range(0, len(data), batch_size):
+            text_inputs = [item for item in data[i : i + batch_size]]
+
+            text_input_format = [generate_input(i) for i in text_inputs]
+            batch_inputs = tokenizer.batch_encode_plus(
+                text_input_format, padding="longest", return_tensors="pt"
+            )
+            batch_inputs["input_ids"] = batch_inputs["input_ids"].cuda()
+            batch_inputs["attention_mask"] = batch_inputs["attention_mask"].cuda()
+
+            generation_args = {
+                "max_new_tokens": 512,
+                "temperature": 0.0,
+                "do_sample": False,
+                "top_p": 0.8,
+            }
+            generate_ids = model.generate(
+                **batch_inputs,
+                eos_token_id=processor.tokenizer.eos_token_id,
+                **generation_args,
             )
 
-            # generation_args = {
-            #     "max_new_tokens": 500,
-            #     "temperature": 0.0,
-            #     "do_sample": False,
-            # }
-            # generate_ids = model.generate(inputs, eos_token_id=processor.tokenizer.eos_token_id, **generation_args)
+            generate_ids = generate_ids[:, inputs["input_ids"].shape[1] :]
+            response = processor.batch_decode(
+                generate_ids,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0]
 
-            # # remove input tokens
-            # generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
-            # response = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-
-            response, _ = model.chat(tokenizer, input_text[:1024], history=[])
+            # response, _ = model.chat(tokenizer, input_text[:1024], history=[])
 
             answer = f"{item['answer']}"
 
