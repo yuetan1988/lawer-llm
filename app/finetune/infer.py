@@ -76,7 +76,7 @@ def infer(use_peft: bool = True, save_peft_merge: bool = False):
     model.eval()
 
     test_input = ["张三怒杀阎婆惜, 该当何罪"]
-    outputs = batch_generate(test_input, model, tokenizer, use_sft_adapter=False)
+    outputs = batch_generate(test_input, model, tokenizer, use_sft_adapter=True)
     print(outputs)
 
     if save_peft_merge:
@@ -86,6 +86,7 @@ def infer(use_peft: bool = True, save_peft_merge: bool = False):
             safe_serialization=True,
             max_shard_size="2GB",
         )
+        tokenizer.save_pretrained(merged_output_dir)
     return
 
 
