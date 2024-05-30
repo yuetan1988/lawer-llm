@@ -26,7 +26,7 @@ tokenizer = AutoTokenizer.from_pretrained(
 model = AutoModelForCausalLM.from_pretrained(
     CFG.model_name_or_path,
     trust_remote_code=True,
-    torch_dtype=torch.bfloat16,
+    torch_dtype=torch.float16,
     device_map="auto",
 )
 model = model.eval()
@@ -40,7 +40,7 @@ for filename in os.listdir(CFG.folder_path):
             data = json.load(file)
 
         if os.path.exists(f"{CFG.output_path}/{filename}"):
-            print(f"SKIP {out_path}/{filename}")
+            print(f"SKIP {CFG.output_path}/{filename}")
             continue
 
         # print(f"start generate: {filename}")
@@ -61,7 +61,7 @@ for filename in os.listdir(CFG.folder_path):
             # generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
             # response = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
 
-            response, _ = model.chat(tokenizer, input_text)
+            response, _ = model.chat(tokenizer, input_text[:1024], history=[])
 
             answer = f"{item['answer']}"
 
