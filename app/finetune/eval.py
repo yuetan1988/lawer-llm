@@ -15,8 +15,9 @@ class CFG:
     output_path = base_dir + "outputs/finetune-eval/custom_internlm2"
 
     # model_name_or_path = output_path + "checkpoint-4000"  # 微调模型
+    model_name_or_path = base_dir + "outputs/internlm-sft-7b-lora"  # Lora微调
     # model_name_or_path = "/root/share/model_repos/internlm2-chat-7b-sft"  # 原模型
-    model_name_or_path = "/root/lawer-llm/outputs/internlm-sft-7b-lora"
+    #  model_name_or_path = "/root/lawer-llm/outputs/internlm-sft-7b-lora"
 
     batch_size = 8
 
@@ -28,7 +29,7 @@ if not os.path.exists(CFG.output_path):
 tokenizer = AutoTokenizer.from_pretrained(
     "/root/share/model_repos/internlm2-chat-7b",
     trust_remote_code=True,
-    padding_size="left",
+    padding_side="left",
 )
 
 model = AutoModelForCausalLM.from_pretrained(
@@ -62,7 +63,7 @@ def batch_generate(
 
     outputs = model.generate(
         **batch_inputs,
-        max_new_tokens=256,
+        max_new_tokens=512,
         do_sample=False,
         temperature=temp,
         top_p=0.8,
@@ -90,6 +91,7 @@ for filename in os.listdir(CFG.folder_path):
         results = {}
         for i in range(0, len(data), CFG.batch_size):
             text_inputs = [item for item in data[i : i + CFG.batch_size]]
+
             response = batch_generate(
                 text_inputs,
                 model,
