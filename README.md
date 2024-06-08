@@ -21,7 +21,7 @@
 
 ## 技术路线
 
-![archicheture](./docs/assets/)
+![archicheture](./docs/assets/architecture.png)
 
 
 - continue pretrain
