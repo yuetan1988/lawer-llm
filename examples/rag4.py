@@ -20,9 +20,7 @@ from langchain_core.retrievers import BaseRetriever
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-
 logger = logging.getLogger(__name__)
-
 
 
 class LangchainLLM(LLM):
@@ -33,13 +31,21 @@ class LangchainLLM(LLM):
     top_p: float = 0.9
     history: List[str] = []
 
-    def __init__(self, model_name_or_path: str, trust_remote_code: bool = True, **kwargs: Any):
+    def __init__(
+        self, model_name_or_path: str, trust_remote_code: bool = True, **kwargs: Any
+    ):
         super(LangchainLLM, self).__init__()
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name_or_path, trust_remote_code=trust_remote_code
+        )
         if self.tokenizer.pad_token is None:
-            self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+            self.tokenizer.add_special_tokens({"pad_token": "[PAD]"})
         self.model = (
-            AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code).half().cuda()
+            AutoModelForCausalLM.from_pretrained(
+                model_name_or_path, trust_remote_code=trust_remote_code
+            )
+            .half()
+            .cuda()
         )
         self.model = self.model.eval()
 
@@ -50,15 +56,17 @@ class LangchainLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ):
-        if hasattr(self.model, 'chat') and callable(self.model.chat):
+        if hasattr(self.model, "chat") and callable(self.model.chat):
             response, _ = self.model.chat(self.tokenizer, prompt, history=self.history)
             self.history = self.history + [[None, response]]
             return response
         else:
-            batch_inputs = self.tokenizer.batch_encode_plus([prompt], padding='longest', return_tensors='pt')
+            batch_inputs = self.tokenizer.batch_encode_plus(
+                [prompt], padding="longest", return_tensors="pt"
+            )
             batch_inputs["input_ids"] = batch_inputs["input_ids"].cuda()
             batch_inputs["attention_mask"] = batch_inputs["attention_mask"].cuda()
-            
+
             output = self.model.generate(
                 **batch_inputs,
                 max_new_tokens=self.max_tokens,
@@ -67,7 +75,8 @@ class LangchainLLM(LLM):
                 top_p=self.top_p,
             )
             response = self.tokenizer.batch_decode(
-                output.cpu()[:, batch_inputs["input_ids"].shape[-1] :], skip_special_tokens=True
+                output.cpu()[:, batch_inputs["input_ids"].shape[-1] :],
+                skip_special_tokens=True,
             )[0]
 
             self.history = self.history + [[None, response]]
@@ -78,10 +87,11 @@ class LangchainLLM(LLM):
         return "Open-retrievals-llm"
 
 
-
-
 if __name__ == "__main__":
-    llm = LangchainLLM(model_name_or_path="/root/share/new_models/microsoft/Phi-3-mini-128k-instruct", temperature=0.3)
+    llm = LangchainLLM(
+        model_name_or_path="/root/share/new_models/microsoft/Phi-3-mini-128k-instruct",
+        temperature=0.3,
+    )
     response = llm._call("你好")
     print(response)
     print(llm.temperature)
