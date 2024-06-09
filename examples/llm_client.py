@@ -5,7 +5,7 @@ import json
 import time
 
 # Define the API endpoint
-url = "http://0.0.0.0:5001/v1/generateText"
+url = "http://127.0.0.1:8001/chat"
 
 headers = {"Content-Type": "application/json"}
 
@@ -22,5 +22,6 @@ response = requests.post(url, headers=headers, data=json.dumps(data))
 end_time = time.time()
 latency = end_time - start_time
 print(f"Latency: {latency} seconds")
+print(response)
 text = json.loads(response.text)
-print("LLM response: " + text["text"])
+print(text)
