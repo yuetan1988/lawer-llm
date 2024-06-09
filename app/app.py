@@ -1,4 +1,11 @@
 import os
+import shutil
+
+import uvicorn
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
 from functools import partial
 import gradio as gr
 from rag.chain import ModelCenter, KnowledgeCenter
@@ -20,6 +27,22 @@ def upload_file(file, knowledge_center):
     file_list.insert(0, filename)
     knowledge_center.add_document("docs/" + filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
+
+
+def rag_process(
+    file_path,
+):
+    """
+    1. 文件md5 hash
+    2. 文件转化为文本
+    3. query+文本进行召回 组装为新的query
+    4. 组合后的query进入大模型返回
+    """
+
+    if file_path is not None:
+        pass
+
+    return
 
 
 def clear_session():

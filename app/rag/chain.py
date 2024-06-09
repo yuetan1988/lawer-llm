@@ -103,7 +103,7 @@ class KnowledgeCenter:
     def init_vector_db(self, filepath: str):
         pass
 
-    def add_document(self, filepath: str):
+    def add_document(self, file_path: str):
         doc = self.parser(file_path)
         self.vector_db.add_documents(doc)
         self.vector_db.save_local(CFG.vector_db_path)
