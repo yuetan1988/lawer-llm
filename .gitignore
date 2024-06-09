@@ -123,6 +123,6 @@ temp/*
 huixiangdou
 /homework/*
 /kdd24-aqa/*
-**/.out
+**/*.out
 data/*.jsonl
 opencompass

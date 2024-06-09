@@ -19,7 +19,7 @@ class CFG:
     # model_name_or_path = "/root/share/model_repos/internlm2-chat-7b-sft"  # 原模型
     #  model_name_or_path = "/root/lawer-llm/outputs/internlm-sft-7b-lora"
 
-    batch_size = 8
+    batch_size = 1
 
 
 if not os.path.exists(CFG.output_path):
@@ -89,7 +89,8 @@ for filename in os.listdir(CFG.folder_path):
 
         # print(f"start generate: {filename}")
         results = {}
-        for i in range(0, len(data), CFG.batch_size):
+        for i in tqdm(range(0, len(data), CFG.batch_size)):
+
             text_inputs = [item for item in data[i : i + CFG.batch_size]]
 
             response = batch_generate(
@@ -102,11 +103,11 @@ for filename in os.listdir(CFG.folder_path):
             for j, item in enumerate(text_inputs):
 
                 curr = {
-                    "origin_prompt": text_inputs[j],
+                    "origin_prompt": generate_input(text_inputs[j]),
                     "prediction": response[j],
                     "refr": f"{item['answer']}",
                 }
-                results[str(i)] = curr
+                results[str(i + j)] = curr
 
         with open(f"{CFG.output_path}/{filename}", "w") as json_file:
             json.dump(results, json_file, ensure_ascii=False, indent=4)

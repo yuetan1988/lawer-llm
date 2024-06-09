@@ -89,6 +89,7 @@ def infer_by_batch(all_raw_text, llm, system):
 
 
 if __name__ == "__main__":
-    model = vLLMWrapper("../../models")
-    response, history = model.chat(query="你好", history=None)
+    # model = vLLMWrapper("../../outputs/checkpoint-5000")
+    model = vLLMWrapper("/root/share/model_repos/internlm2-chat-7b")
+    response, history = model.chat(query="你好, 你懂法律吗?", history=None)
     print(response)
