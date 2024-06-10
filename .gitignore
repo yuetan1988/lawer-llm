@@ -126,3 +126,5 @@ huixiangdou
 **/*.out
 data/*.jsonl
 opencompass
+/data/download_data/*.zip
+/data/download_data/knowledge_laws/*

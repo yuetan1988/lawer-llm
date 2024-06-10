@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from functools import partial
 import gradio as gr
 from rag.chain import ModelCenter, KnowledgeCenter
-from .utils import ErrorInfo, PromptCN, Config
+from .conf import ErrorInfo, PromptCN, Config
 
 
 def upload_file(file, knowledge_center):

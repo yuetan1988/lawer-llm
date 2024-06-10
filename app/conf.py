@@ -23,5 +23,6 @@ class Config:
 
     USING_RAG = True
     RAG_CONFIG_PATH = ""
-    RAG_VECTOR_DB_PATH = "../examples/database/chroma"
+    ORIGINAL_KNOWLEDGE_PATH = "/root/lawer-llm/data/download_data/knowledge_laws"
+    VECTOR_DB_PATH = "../examples/database/chroma"
     embed_model_name_or_path = "BAAI/bge-large-zh-v1.5"
