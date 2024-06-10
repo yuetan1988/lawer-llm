@@ -35,25 +35,14 @@ def get_prompt_chain(template):
     return QA_CHAIN_PROMPT
 
 
-def get_retrieval():
-    return
-
-
-def get_vector_db(CFG):
-    embeddings = HuggingFaceEmbeddings(model_name=CFG.embed_model_name_or_path)
-
+def load_chain(CFG, embedder):
     vector_db = Chroma(
+        embedding_function=embedder,
         persist_directory=CFG.VECTOR_DB_PATH,
-        embedding_function=embeddings,
     )
-    return vector_db
-
-
-def load_chain(CFG):
-    vector_db = get_vector_db(CFG)
     retriever = vector_db.as_retriever(search_type="mmr")
 
-    llm = InternLLM(model_name_or_path=CFG.llm_model_name_or_path)
+    llm = InternLLM(model_name_or_path=CFG.LLM_DIR)
 
     QA_CHAIN_PROMPT = get_prompt_chain(RAG_PROMPT)
 
@@ -66,14 +55,6 @@ def load_chain(CFG):
 
     qa_chain.return_source_documents = True
     return qa_chain
-
-
-def parse_reference(response):
-    reference_text = ""
-    for idx, source in enumerate(response["source_documents"][:4]):
-        sep = f"参考文献【{idx + 1}】：{source.metadata['header1']}"
-        reference_text += f"{sep}\n{source.page_content}\n\n"
-    return reference_text
 
 
 class ModelCenter:
@@ -118,16 +99,20 @@ class KnowledgeCenter:
         logger.info(f"Init knowledge from {file_path}")
         document = self.loader(file_path).load_and_split(self.splitter)
         vector_db = Chroma.from_documents(
-            documents=doc,
+            documents=document,
             embedding=self.embedder,
-            persist_directory=self.CFG.persist_directory,
+            persist_directory=self.CFG.VECTOR_DB_PATH,
         )
         vector_db.persist()
 
     def add_document(self, file_path: str):
         doc = self.parser(file_path)
         self.vector_db.add_documents(doc)
-        self.vector_db.save_local(self.CFG.vector_db_path)
+        self.vector_db.save_local(self.CFG.VECTOR_DB_PATH)
+
+    @classmethod
+    def as_retrieval(cls):
+        return self.vector_db.as_retrieval()
 
 
 class LawDirectoryLoader(DirectoryLoader):
@@ -231,21 +216,35 @@ class LawRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):
     #     ]
 
 
+def parse_reference(response):
+    reference_text = ""
+    for idx, source in enumerate(response["source_documents"][:4]):
+        sep = f"参考文献【{idx + 1}】：{source.metadata['header1']}"
+        reference_text += f"{sep}\n{source.page_content}\n\n"
+    return reference_text
+
+
 if __name__ == "__main__":
     sys.path.append("../")
     from conf import Config
 
     CFG = Config
-    loader = LawDirectoryLoader
-    splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=256, chunk_overlap=32
-    )
     embedder = HuggingFaceEmbeddings(
         model_name="BAAI/bge-large-zh-v1.5",
         model_kwargs={"device": "cuda"},
         encode_kwargs={"normalize_embeddings": False},
     )
-    knowledge_center = KnowledgeCenter(
-        CFG, loader=loader, splitter=splitter, embedder=embedder
-    )
-    knowledge_center.init_vector_db(CFG.ORIGINAL_KNOWLEDGE_PATH)
+
+    # loader = LawDirectoryLoader
+    # splitter = LawRecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    #     chunk_size=256, chunk_overlap=32
+    # )
+
+    # knowledge_center = KnowledgeCenter(
+    #     CFG, loader=loader, splitter=splitter, embedder=embedder
+    # )
+    # knowledge_center.init_vector_db(CFG.ORIGINAL_KNOWLEDGE_PATH)
+
+    chain = load_chain(CFG, embedder=embedder)
+    response = chain.invoke("宪法第一条的内容是什么?")
+    print(response)

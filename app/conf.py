@@ -16,7 +16,7 @@ class PromptCN:
 class Config:
     """超参数与配置类"""
 
-    LLM_DIR = "../models"
+    LLM_DIR = "/root/share/model_repos/internlm2-chat-7b"
 
     USING_LMDEPLOY = True
     GENERATION_CONFIG_PATH = ""
@@ -24,5 +24,5 @@ class Config:
     USING_RAG = True
     RAG_CONFIG_PATH = ""
     ORIGINAL_KNOWLEDGE_PATH = "/root/lawer-llm/data/download_data/knowledge_laws"
-    VECTOR_DB_PATH = "../examples/database/chroma"
+    VECTOR_DB_PATH = "/root/lawer-llm/data/database/chroma"
     embed_model_name_or_path = "BAAI/bge-large-zh-v1.5"

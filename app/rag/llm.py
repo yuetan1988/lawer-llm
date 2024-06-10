@@ -40,6 +40,6 @@ class InternLLM(LLM):
 
 
 if __name__ == "__main__":
-    llm = InternLLM(model_name_or_path="../../models")
+    llm = InternLLM(model_name_or_path="/root/share/model_repos/internlm2-chat-7b")
     response = llm._call("你好")
     print(response)
