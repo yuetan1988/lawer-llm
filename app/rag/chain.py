@@ -97,6 +97,7 @@ class KnowledgeCenter:
     """
 
     def __init__(self, CFG):
+        self.CFG = CFG
         self.parser = FileParser()
         self.vector_db = get_vector_db(CFG)
 
@@ -106,4 +107,4 @@ class KnowledgeCenter:
     def add_document(self, file_path: str):
         doc = self.parser(file_path)
         self.vector_db.add_documents(doc)
-        self.vector_db.save_local(CFG.vector_db_path)
+        self.vector_db.save_local(self.CFG.vector_db_path)

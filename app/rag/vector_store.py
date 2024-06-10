@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Optional
 
 import os
 import tiktoken

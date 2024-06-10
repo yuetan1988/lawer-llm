@@ -9,12 +9,7 @@ from fastapi.responses import FileResponse
 from functools import partial
 import gradio as gr
 from rag.chain import ModelCenter, KnowledgeCenter
-
-
-class CFG:
-    llm_model_name_or_path = "../models"
-    embed_model_name_or_path = "BAAI/bge-large-zh-v1.5"
-    vector_db_path = "../examples/database/chroma"
+from .utils import ErrorInfo, PromptCN, Config
 
 
 def upload_file(file, knowledge_center):
@@ -50,8 +45,8 @@ def clear_session():
 
 
 def main():
-    model_center = ModelCenter(CFG)
-    knowledge_center = KnowledgeCenter(CFG)
+    model_center = ModelCenter(Config)
+    knowledge_center = KnowledgeCenter(Config)
 
     block = gr.Blocks()
     with block as demo:
