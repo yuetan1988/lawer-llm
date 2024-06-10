@@ -13,7 +13,7 @@ from typing import Any, Optional
 import gradio as gr
 import torch
 from langchain.chains import RetrievalQA
-from langchain.document_loaders import (
+from langchain_community.document_loaders import (
     PyPDFLoader,
     UnstructuredFileLoader,
     UnstructuredMarkdownLoader,
@@ -25,7 +25,7 @@ from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -155,7 +155,7 @@ def load_chain():
         embedding_function=embeddings,
     )
 
-    llm = InternLLM(model_name_or_path="../models")
+    llm = InternLLM(model_name_or_path="/root/share/model_repos/internlm2-chat-7b")
     QA_CHAIN_PROMPT = get_prompt()
 
     qa_chain = RetrievalQA.from_chain_type(
@@ -229,8 +229,7 @@ def main():
 
         gr.Markdown(
             """提醒：<br>
-        1. 初始化数据库时间可能较长，请耐心等待。
-        2. 使用中如果出现异常，将会在文本输入框进行展示，请不要惊慌。 <br>
+        初始化数据库时间可能较长，请耐心等待。 <br>
         """
         )
     # threads to consume the request

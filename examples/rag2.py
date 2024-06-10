@@ -3,7 +3,8 @@
 """
 
 from typing import Any, Optional
-
+import os
+import shutil
 import gradio as gr
 import torch
 from langchain.chains import RetrievalQA
@@ -149,7 +150,7 @@ def load_chain():
         embedding_function=embeddings,
     )
 
-    llm = InternLLM(model_name_or_path="../models")
+    llm = InternLLM(model_name_or_path="/root/share/model_repos/internlm2-chat-7b")
     QA_CHAIN_PROMPT = get_prompt()
 
     qa_chain = RetrievalQA.from_chain_type(

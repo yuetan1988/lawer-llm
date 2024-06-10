@@ -202,6 +202,15 @@ class FileParser:
             text += page.extract_text().strip()
         return text
 
+    @staticmethod
+    def extract_text_from_pdf3(file_stream):
+        import pdfplumber
+
+        all_text = ""
+        reader = pdfplumber.open(file_stream)
+
+        pass
+
 
 if __name__ == "__main__":
     file_io = FileParser()
