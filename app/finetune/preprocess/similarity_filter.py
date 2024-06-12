@@ -27,9 +27,7 @@ sentences = [
 
 
 # 创建 MinHash 对象并插入到 LSH 中
-lsh = MinHashLSH(
-    threshold=0.5, num_perm=128
-)  # threshold 是相似度阈值，可以根据需要调整
+lsh = MinHashLSH(threshold=0.5, num_perm=128)  # threshold 是相似度阈值，可以根据需要调整
 
 for idx, sentence in enumerate(sentences):
     minhash = create_minhash(list(sentence))

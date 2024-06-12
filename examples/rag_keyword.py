@@ -1,11 +1,7 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-KEYWORD_PROMPT = (
-    "从这句话中抽取5个和法律、条例、规定相关的关键字 "
-    "### \n{instruction}\n"
-    "只输出关键字即可, 不要说多余的话"
-)
+KEYWORD_PROMPT = "从这句话中抽取5个和法律、条例、规定相关的关键字 " "### \n{instruction}\n" "只输出关键字即可, 不要说多余的话"
 
 # 茴香豆参考
 TOPIC_PROMPT = "告诉我这句话的主题，直接说主题不要解释" "\n{instruction}\n"
