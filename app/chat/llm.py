@@ -1,9 +1,10 @@
-from typing import Any, Optional
+from typing import Any, Optional, List, Union, Tuple
 
 import torch
 from langchain.llms.base import LLM
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from app.configs.settings import settings
 
 
 class InternLLM(LLM):
@@ -26,10 +27,7 @@ class InternLLM(LLM):
         print("完成本地模型的加载")
 
     def _call(self, prompt: str, stop=None, run_manager=None, **kwargs: Any):
-        system_prompt = """You are an AI assistant whose name is InternLM (书生·浦语).
-                        - InternLM (书生·浦语) is a conversational language model that is developed by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
-                        - InternLM (书生·浦语) can understand and communicate fluently in the language chosen by the user such as English and 中文.
-                        """
+        system_prompt = """You are a helpful, honest, and harmless AI assistant whose name is InternLM (书生·浦语)."""
         messages = [(system_prompt, "")]
         response, history = self.model.chat(self.tokenizer, prompt, history=messages)
         return response
@@ -38,8 +36,20 @@ class InternLLM(LLM):
     def _llm_type(self) -> str:
         return "InternLM"
 
+    def chat(self, prompt, history):
+        response, history = self.model.chat(self.tokenizer, prompt, history)
+        return response, []
+
+
+def lmdeploy_response(prompt: Union[str, List[str]]):
+    pipe = lmdeploy.pipeline(settings.llm_model_path)
+    response = pipe(prompt)
+    print(response)
+
 
 if __name__ == "__main__":
-    llm = InternLLM(model_name_or_path="/root/share/model_repos/internlm2-chat-7b")
-    response = llm._call("你好")
-    print(response)
+    # llm = InternLLM(model_name_or_path=settings.llm_model_path)
+    # response = llm._call("回答关于劳动法的案例")
+    # print(response)
+
+    lmdeploy_response(["关于劳动法的案例"], settings)

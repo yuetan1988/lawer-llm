@@ -15,3 +15,5 @@ rank_bm25
 
 fastapi
 unicorn
+pydantic_settings
+lmdeploy

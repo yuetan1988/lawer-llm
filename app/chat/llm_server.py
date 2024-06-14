@@ -8,10 +8,13 @@ from pydantic import BaseModel
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
+from app.configs.settings import settings
+
 
 app = FastAPI()
 
-model_name_or_path = "/root/share/model_repos/internlm2-chat-7b"
+model_name_or_path = settings.llm_model_path
+
 tokenizer = AutoTokenizer.from_pretrained(
     model_name_or_path, trust_remote_code=True, device_map="cuda:0"
 )

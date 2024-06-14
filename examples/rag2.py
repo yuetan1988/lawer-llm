@@ -20,7 +20,7 @@ from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -180,6 +180,7 @@ class Model_center:
             return "", chat_history, search
         try:
             chat_history.append((question, self.chain({"query": question})["result"]))
+            print(chat_history)
             return "", chat_history, search
         except Exception as e:
             return e, chat_history, search
