@@ -1,6 +1,7 @@
 import sys
 import logging
 from typing import Optional, List, Iterable
+from langchain import Chain
 from langchain.chains import RetrievalQA
 from langchain_core.documents import Document
 from langchain.retrievers import EnsembleRetriever
@@ -222,6 +223,62 @@ def parse_reference(response):
         sep = f"参考文献【{idx + 1}】：{source.metadata['header1']}"
         reference_text += f"{sep}\n{source.page_content}\n\n"
     return reference_text
+
+
+class CustomAgent(Chain):
+
+    def __init__(self):
+        self.knowledge_center = KnowledgeCenter()
+        self.model_center = ModelCenter()
+
+    def run(self, query):
+        should_access_external_data = self.decide_access(query)
+
+        if not should_access_external_data:
+            pass
+
+        
+        rewritten_query = self.rewrite_query(query)
+
+        source = self.chosed_data_source(rewritten_query)
+
+        data = self.retrive_data(source, rewritten_query)
+        return
+    
+    def decide_access(self, query):
+        prompt = PromptTemplate(
+            input_variables=["query"],
+            template="Does this query require external data? Query: {query}"
+        )
+        decision = self.llm(prompt.render(query=query))
+        return "yes" in decision.lower()
+    
+    def rewrite_query(self, query):
+        prompt = PromptTemplate(
+            input_variables=["query"],
+            template="Rewrite this query for better results: {query}"
+        )
+        rewritten_query = self.llm(prompt.render(query=query))
+        return rewritten_query
+    
+    def choose_data_source(self, query):
+        # Logic to choose the best data source based on the query
+        prompt = PromptTemplate(
+            input_variables=["query"],
+            template="Which external knowledge base should be used for this query: {query}"
+        )
+        source_decision = self.llm(prompt.render(query=query))
+        return source_decision.strip()
+    
+    def retrieve_data(self, source, query):
+        # Logic to retrieve data from the chosen data source
+        if source not in self.external_knowledge_bases:
+            return "Invalid data source."
+        
+        knowledge_base = self.external_knowledge_bases[source]
+        data = knowledge_base.query(query)
+        return data
+
 
 
 if __name__ == "__main__":
