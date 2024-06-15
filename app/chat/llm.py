@@ -36,15 +36,27 @@ class InternLLM(LLM):
     def _llm_type(self) -> str:
         return "InternLM"
 
-    def chat(self, prompt, history):
-        response, history = self.model.chat(self.tokenizer, prompt, history)
+    def chat(self, prompt, history, meta_instruction: str = ""):
+        response, history = self.model.chat(
+            self.tokenizer, prompt, history, meta_instruction=meta_instruction
+        )
         return response, []
 
 
-def lmdeploy_response(prompt: Union[str, List[str]]):
+def lmdeploy_response(
+    prompt: Union[str, List[str]], history=[], meta_instruction: str = ""
+):
+    import lmdeploy
+
     pipe = lmdeploy.pipeline(settings.llm_model_path)
     response = pipe(prompt)
-    print(response)
+
+    if isinstance(response, list):
+        response = [i.text for i in response]
+    else:
+        response = response.text
+
+    return response, []
 
 
 if __name__ == "__main__":
@@ -52,4 +64,4 @@ if __name__ == "__main__":
     # response = llm._call("回答关于劳动法的案例")
     # print(response)
 
-    lmdeploy_response(["关于劳动法的案例"], settings)
+    lmdeploy_response("关于劳动法的案例")

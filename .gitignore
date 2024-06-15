@@ -130,3 +130,4 @@ opencompass
 /data/download_data/knowledge_laws/*
 /data/database/*
 /app_back/*
+/data_base/**

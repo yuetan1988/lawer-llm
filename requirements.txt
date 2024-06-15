@@ -1,3 +1,4 @@
+lmdeploy
 datasets
 transformers
 tokenizers
@@ -16,4 +17,3 @@ rank_bm25
 fastapi
 unicorn
 pydantic_settings
-lmdeploy
