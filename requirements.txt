@@ -17,5 +17,6 @@ unicorn
 pydantic_settings
 pysqlite3-binary 
 duckduckgo_search
-https://github.com/LongxingTan/open-retrievals.git
+scikit-learn
+open-retrievals
 rank_bm25
