@@ -12,7 +12,8 @@ class Settings(BaseSettings):
         "INFO"
     )
 
-    llm_model_path: str = "/root/share/model_repos/internlm2-chat-7b"
+    # llm_model_path: str = "/root/share/model_repos/internlm2-chat-7b"
+    llm_model_path: str = "/root/lawer-llm/outputs/internlm-sft-7b-lora"
     llm_url: str = "http://127.0.0.1:8001/chat"
     knowledge_file_path: str = "/root/lawer-llm/data/download_data/knowledge_laws"
     vector_db_path: str = "/root/lawer-llm/data/database/chroma"

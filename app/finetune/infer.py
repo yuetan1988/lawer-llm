@@ -4,7 +4,7 @@ from transformers.generation import GenerationConfig
 
 
 base_model_name_or_path = "/root/share/model_repos/internlm2-chat-7b"
-lora_model_name_or_path = "/root/lawer-llm/outputs/checkpoint-5000"
+lora_model_name_or_path = "/root/lawer-llm/outputs"
 merged_output_dir = "/root/lawer-llm/outputs/internlm-sft-7b-lora"
 PROMPT = (
     "Below is an instruction that describes a task. "
@@ -71,7 +71,7 @@ def infer(use_peft: bool = True, save_peft_merge: bool = False):
     if use_peft:
         from peft import AutoPeftModelForCausalLM, PeftModel
 
-        model = PeftModel.from_pretrained(model, model_id=lora_model_name_or_path)
+        model = PeftModel.from_pretrained(model, lora_model_name_or_path)
 
     model.eval()
 
@@ -91,4 +91,4 @@ def infer(use_peft: bool = True, save_peft_merge: bool = False):
 
 
 if __name__ == "__main__":
-    infer(use_peft=True, save_peft_merge=False)
+    infer(use_peft=True, save_peft_merge=True)

@@ -1,3 +1,4 @@
+import os
 import logging
 import gradio as gr
 import requests
@@ -5,13 +6,14 @@ from functools import partial
 from requests.adapters import HTTPAdapter
 import json
 from app.configs.settings import settings
-from app.chat.llm import InternLLM
-from app.retrieval.dense_retrieval import retrieval
+from app.chat.llm import InternLLM, ImdeployLLM
+from app.retrieval.open_retrieval import retrieval, init_index, add_document
 from app.configs.prompt import PromptCN
 
 logger = logging.getLogger(__name__)
 
-llm = InternLLM(model_name_or_path=settings.llm_model_path)
+# llm = InternLLM(model_name_or_path=settings.llm_model_path)
+llm = ImdeployLLM(model_name_or_path=settings.llm_model_path)
 
 
 def chat_process_url(prompt):
@@ -35,10 +37,26 @@ def chat_process(prompt, history):
     return response, history
 
 
-def rag_process(prompt, history=[]):
-    logging.info(f"Start to chat: {prompt}")
+def rewriter_process(prompt, history=[]):
+    logging.info(f"Start to rewrite: {prompt}")
+    prompt_rewriter = PromptCN.rewriter_prompt.format(instruction=prompt)
+    response, history = llm.chat(prompt_rewriter, history)
+    logging.info(f"rewrite result: {response}")
+    return response
 
-    context = retrieval(prompt)
+
+def if_rag_process(prompt, history=[]):
+    logging.info(f"Start to judge if rag: {prompt}")
+    prompt_retrieval = PromptCN.retrieval_prompt.format(instruction=prompt)
+    response, history = llm.chat(prompt_retrieval, history)
+    logging.info(f"if rag result: {response}")
+    return response
+
+
+def rag_process(prompt, history=[], top_k: int = 3):
+    logging.info(f"Start to rag chat: {prompt}")
+
+    context = retrieval(prompt, top_k=top_k)
     context = [doc.page_content for doc in context]
     logging.info(f"Retrieval result: {context}")
 
@@ -47,9 +65,8 @@ def rag_process(prompt, history=[]):
     )
 
     response, history = chat_process(prompt_with_context, history)
-    print(history)
+    logging.info(f"chat response: {response}")
     history.append((prompt, response))
-    print(history)
 
     logging.info(f"LLM response: {response}")
     context = parse_reference(context)
@@ -57,16 +74,34 @@ def rag_process(prompt, history=[]):
     return "", history, context
 
 
+def app_chat_process(prompt, history=[], top_k: int = 3):
+    logging.info(f"Start to chat: {prompt}")
+    rewriter_response = rewriter_process(prompt)
+    if_rag_response = if_rag_process(rewriter_response)
+    if if_rag_response == "1":
+        return rag_process(rewriter_response, history)
+    else:
+        logging.info(f"Normal chat: {prompt}")
+        response, history = chat_process(rewriter_response, history, top_k=top_k)
+        history.append((prompt, response))
+        return "", history, []
+
+
 def upload_file(file):
-    """用户上传"""
+    """Handle user file upload and add document to the Chroma database."""
     if not os.path.exists("docs"):
         os.mkdir("docs")
+
     filename = os.path.basename(file.name)
-    # shutil.move(file.name, "docs/" + filename)
-    # # file_list首位插入新上传的文件
-    # file_list.insert(0, filename)
-    # add_document("docs/" + filename)
-    return gr.Dropdown.update(choices=file, value=filename)
+    file_path = os.path.join("docs", filename)
+
+    with open(file_path, "wb") as f:
+        f.write(file)
+
+    add_document(file_path)
+    logging.info(f"Uploaded and added document: {filename}")
+
+    return gr.Dropdown.update(choices=[filename], value=filename)
 
 
 def clear_session():
@@ -74,7 +109,10 @@ def clear_session():
 
 
 def parse_reference(reference):
-    return ["\n".join(reference)]
+    formatted_text = "\n".join(
+        [f"{idx+1}. {item.strip()}" for idx, item in enumerate(reference)]
+    )
+    return formatted_text
 
 
 def main():
@@ -90,9 +128,9 @@ def main():
         with gr.Row():
             with gr.Column(scale=1):
                 embedding_model = gr.Dropdown(
-                    ["text2vec-base", "bge-base"],
+                    ["bge-large-zh-v1.5", "bge-base"],
                     label="向量模型",
-                    value="text2vec-base",
+                    value="bge-large-zh-v1.5",
                 )
                 chat = gr.Dropdown(["InternLM"], label="大语言模型", value="InternLM")
                 top_k = gr.Slider(
@@ -129,14 +167,14 @@ def main():
 
             # 点击chat按钮
             db_wo_his_btn.click(
-                rag_process,
-                inputs=[message, chatbot],
+                app_chat_process,
+                inputs=[message, chatbot, top_k],
                 outputs=[message, chatbot, reference],
             )
             # 输入框回车
             message.submit(
-                rag_process,
-                inputs=[message, chatbot],
+                app_chat_process,
+                inputs=[message, chatbot, top_k],
                 outputs=[message, chatbot, reference],
             )
 

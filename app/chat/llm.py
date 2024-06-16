@@ -1,3 +1,4 @@
+import os
 from typing import Any, Optional, List, Union, Tuple
 
 import torch
@@ -43,20 +44,41 @@ class InternLLM(LLM):
         return response, []
 
 
-def lmdeploy_response(
-    prompt: Union[str, List[str]], history=[], meta_instruction: str = ""
-):
-    import lmdeploy
+class ImdeployLLM(LLM):
+    tokenizer: AutoTokenizer = None
+    model: AutoModelForCausalLM = None
 
-    pipe = lmdeploy.pipeline(settings.llm_model_path)
-    response = pipe(prompt)
+    def __init__(self, model_name_or_path):
+        super().__init__()
+        from lmdeploy import pipeline, ChatTemplateConfig, TurbomindEngineConfig
 
-    if isinstance(response, list):
-        response = [i.text for i in response]
-    else:
-        response = response.text
+        self.model = pipeline(
+            settings.llm_model_path,
+            chat_template_config=ChatTemplateConfig.from_json(
+                os.path.join(model_name_or_path, "lawer.json")
+            ),
+        )
 
-    return response, []
+        print("完成本地模型的Lmdeploy加载")
+
+    def _call(self, prompt: str, stop=None, run_manager=None, **kwargs: Any):
+        system_prompt = """You are a helpful, honest, and harmless AI assistant whose name is InternLM (书生·浦语)."""
+        messages = [(system_prompt, "")]
+        response, history = self.model.chat(self.tokenizer, prompt, history=messages)
+        return response
+
+    @property
+    def _llm_type(self) -> str:
+        return "LmdeployInternLM"
+
+    def chat(self, prompt, history, meta_instruction: str = ""):
+        response = self.model(prompt)
+        if isinstance(response, list):
+            response = [i.text for i in response]
+        else:
+            response = response.text
+
+        return response, []
 
 
 if __name__ == "__main__":

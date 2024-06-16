@@ -30,12 +30,12 @@ def index(file_path: str):
     vector_db.persist()
 
 
-def retrieval(query: str):
+def retrieval(query: str, top_k: int = 3):
     vector_db = Chroma(
         embedding_function=embedder,
         persist_directory=settings.vector_db_path,
     )
-    retrieval = vector_db.as_retriever(search_type="mmr")
+    retrieval = vector_db.as_retriever(search_type="mmr", search_kwargs={"k": top_k})
 
     context = retrieval.invoke(query)
     return context
