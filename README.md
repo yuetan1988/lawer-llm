@@ -31,42 +31,31 @@
     - 数据: 配比, diversity, Self-Instruct, Self-QA, Self-KG
     - 减少幻觉: Generate with Citation, Factual Consistency Evaluation
 - RAG
+    - [finetuned retrieval and rerank](https://github.com/LongxingTan/open-retrievals)
     - multi-vector
     - rerank
-- Agent
+- Other
+    - judge if need rewriter
+    - judge if need rag
 
 
 ## How to use it
 
 ### 激活环境
 ```shell
-conda activate xtuner
 pip install -r requirements.txt
 ```
 
 ### SFT
 
-**Performance**
-
-| Model | Size | LawBench<sup>0shotval</sup> | LawBench<sup>1shotval</sup> | weights |
-| :-- | :-: | :-: | :-: | :-: | 
-| internlm2-chat-7b-sft | 7B |  |  | [官方weights](https://huggingface.co/internlm/internlm2-chat-7b-sft) |
-| internlm2-chat-7b | 7B |  |  |  |
-| internlm2-chat-7b-4bits | 7B |  |  |  |
-| internlm2-chat-20b-sft | 20B |  |  |  |
-| internlm2-chat-20b | 20B |  |  |  |
-| Meta-Llama-3-8B-Instruct | 8B |  |  |  |
-
+```shell
+cd app/finetune
+sh run.sh
+```
 
 ### RAG
-
-
-
-
-
-### web-demo
-
-```shell
-# 端口查看开发机ssh连接的端口
-streamlit run web_demo.py --server.address 127.0.0.1 --server.port 38649
 ```
+python -m app.rag
+```
+
+![demo](./docs/assets/demo.png)
