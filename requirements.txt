@@ -5,10 +5,10 @@ transformers
 streamlit==1.24.0
 sentencepiece
 accelerate
-langchain==0.0.292
+langchain
 langchain-community
-gradio==4.4.0
-chromadb==0.4.15
+gradio
+chromadb
 unstructured==0.10.30
 markdown==3.3.7
 pypdf
@@ -18,5 +18,5 @@ pydantic_settings
 pysqlite3-binary 
 duckduckgo_search
 scikit-learn
-open-retrievals
+open-retrievals==0.0.6
 rank_bm25

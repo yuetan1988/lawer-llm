@@ -1,7 +1,10 @@
+import os
 from typing import Literal
 from pydantic_settings import BaseSettings
 
 from app.configs.constants import APP_NAME
+
+OPENXLAB = True
 
 
 class Settings(BaseSettings):
@@ -21,6 +24,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if OPENXLAB:
+    print(os.system("pwd"))
+    settings.llm_model_path = "./internlm2-weights"
+    settings.vector_db_path = "./internlm2-weights/database/chroma"
 
 
 def make_settings() -> Settings:

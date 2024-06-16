@@ -5,12 +5,22 @@ import requests
 from functools import partial
 from requests.adapters import HTTPAdapter
 import json
+from modelscope import snapshot_download
 from app.configs.settings import settings
 from app.chat.llm import InternLLM, ImdeployLLM
 from app.retrieval.open_retrieval import retrieval, init_index, add_document
 from app.configs.prompt import PromptCN
 
 logger = logging.getLogger(__name__)
+
+
+if not os.path.exists(settings.llm_model_path):
+    base_path = "./internlm2-weights"
+    os.system(
+        f"git clone https://code.openxlab.org.cn/YueTan/lawer-llm.git {base_path}"
+    )
+    os.system(f"cd {base_path} && git lfs pull")
+
 
 # llm = InternLLM(model_name_or_path=settings.llm_model_path)
 llm = ImdeployLLM(model_name_or_path=settings.llm_model_path)
