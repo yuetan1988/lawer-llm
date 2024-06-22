@@ -20,3 +20,4 @@ duckduckgo_search
 scikit-learn
 open-retrievals==0.0.6
 rank_bm25
+pymupdf==1.19.0

@@ -3,7 +3,7 @@
 </h1><br>
 
 
-[书生·浦语 InternLM](https://github.com/InternLM) 开源大模型实践项目: 罪恶克星-法律大模型
+[书生·浦语 InternLM](https://github.com/InternLM) 第二期实践项目: 罪恶克星-法律大模型
 
 
 ## 项目目标
@@ -17,6 +17,7 @@
 - 根据上传资源，回答法律问题
 - 上网搜索，挥发法律问题
 - 根据上传资源，提供一定审计功能
+- 项目过程中，我们也开源了RAG向量、排序的便捷微调工具[Open-retrievals](https://github.com/LongxingTan/open-retrievals)
 
 
 ## 技术路线
@@ -31,7 +32,7 @@
     - 数据: 配比, diversity, Self-Instruct, Self-QA, Self-KG
     - 减少幻觉: Generate with Citation, Factual Consistency Evaluation
 - RAG
-    - [finetuned retrieval and rerank](https://github.com/LongxingTan/open-retrievals)
+    - finetuned retrieval and rerank
     - multi-vector
     - rerank
 - Other
