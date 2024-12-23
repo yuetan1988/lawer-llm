@@ -47,6 +47,12 @@
 pip install -r requirements.txt
 ```
 
+国内网络，环境变量设置
+```shell
+export HF_ENDPOINT=https://hf-mirror.com
+```
+
+
 ### SFT
 
 ```shell
