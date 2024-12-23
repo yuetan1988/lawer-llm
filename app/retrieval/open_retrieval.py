@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 import json
@@ -10,7 +11,13 @@ from retrievals.tools.langchain import (
 from app.retrieval.file_utils import *
 from app.configs.settings import settings
 
-embedder = LangchainEmbedding(model_name="BAAI/bge-large-zh-v1.5")
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+
+
+embedder = LangchainEmbedding(model_name="BAAI/bge-large-zh-v1.5",
+    model_kwargs={"device": "cuda"},
+    # encode_kwargs={"normalize_embeddings": False},
+)
 
 
 def load_and_split_documents(file_path: str, chunk_size=256, chunk_overlap=32):
